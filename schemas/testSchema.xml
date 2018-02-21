@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- Copyright 2014-2015 Distributed Management Task Force, Inc. (DMTF). All rights reserved.--> 
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+
+    <edmx:TestTarget Target="An Example XML Target">
+    </edmx:TestTarget>
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/ServiceRoot_v1.xml">
+      <edmx:Include Namespace="ServiceRoot" />
+      <edmx:Include Namespace="ServiceRoot.v1_0_2"/>
+    </edmx:Reference>
+</edmx:Edmx>

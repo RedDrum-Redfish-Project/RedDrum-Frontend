@@ -1,0 +1,7 @@
+{
+    "Description": "Base Message Registry File locations",
+    "Name": "Base Message Registry File",
+    "RegistryPrefix": "Base",
+    "RegistryVersion": "1.2.0",
+    "Registry": "1.2"
+}

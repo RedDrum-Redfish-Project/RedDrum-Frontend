@@ -1,0 +1,6 @@
+{
+    "@odata.context": "/redfish/v1/$metadata#JsonSchemaFile.JsonSchemaFile",
+    "@odata.type": "#JsonSchemaFile.v1_0_4.JsonSchemaFile"
+}
+
+

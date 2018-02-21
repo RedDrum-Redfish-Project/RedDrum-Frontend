@@ -1,0 +1,9 @@
+{
+    "@odata.context": "/redfish/v1/$metadata#SimpleStorageCollection.SimpleStorageCollection",
+    "@odata.type": "#SimpleStorageCollection.SimpleStorageCollection",
+    "@odata.id": null,
+    "Name": "Simple Storage Collection",
+    "Description": "Collection of storage controllers enabled for the computer system",
+    "Members@odata.count": 0,
+    "Members": [ ]
+}

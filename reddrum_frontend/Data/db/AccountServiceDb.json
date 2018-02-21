@@ -1,0 +1,10 @@
+{
+    "Id": "AccountService",
+    "AuthFailureLoggingThreshold": 3,
+    "MinPasswordLength": 6,
+    "AccountLockoutThreshold": 5,
+    "AccountLockoutDuration": 30,
+    "AccountLockoutCounterResetAfter": 30,
+    "MaxPasswordLength": 255,
+    "ServiceEnabled": true
+}

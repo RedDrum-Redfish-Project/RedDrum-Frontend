@@ -1,0 +1,9 @@
+{
+    "@odata.context": "/redfish/v1/$metadata#EthernetInterfaceCollection.EthernetInterfaceCollection",
+    "@odata.type": "#EthernetInterfaceCollection.EthernetInterfaceCollection",
+    "@odata.id": null,
+    "Name": "Ethernet Interface Collection",
+    "Description": "Collection of Interface Interfaces for the Computer System",
+    "Members@odata.count": 0,
+    "Members": [ ]
+}

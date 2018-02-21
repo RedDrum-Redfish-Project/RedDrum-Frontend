@@ -1,0 +1,14 @@
+{
+"root": { 
+   "UserName": "root", "Password": "password", "RoleId": "Administrator", "Enabled": true, "Deletable": false 
+   },
+"redfish_adm": { 
+   "UserName": "redfish_adm", "Password": "password_adm", "RoleId": "Administrator", "Enabled": true, "Deletable": true 
+   },
+"redfish_oper": { 
+   "UserName": "redfish_oper", "Password": "password_oper", "RoleId": "Operator", "Enabled": true, "Deletable": true 
+   },
+"redfish_readonly": { 
+   "UserName": "redfish_readonly", "Password": "password_readonly", "RoleId": "ReadOnlyUser", "Enabled": true, "Deletable": true 
+   }
+}

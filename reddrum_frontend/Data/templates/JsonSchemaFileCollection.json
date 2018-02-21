@@ -1,0 +1,10 @@
+{
+    "@odata.context": "/redfish/v1/$metadata#JsonSchemaFileCollection.JsonSchemaFileCollection",
+    "@odata.id": "/redfish/v1/JsonSchemas",
+    "@odata.type": "#JsonSchemaFileCollection.JsonSchemaFileCollection",
+    "Name": "JsonSchemaFile Collection",
+    "Members@odata.count": 0,
+    "Description": "Collection of JsonSchemaFiles that point to actual JsonSchemas",
+    "Members": [ ]
+}
+

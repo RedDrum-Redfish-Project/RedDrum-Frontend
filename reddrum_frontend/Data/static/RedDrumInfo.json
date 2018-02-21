@@ -1,0 +1,10 @@
+{
+    "@odata.id": "/redfish/v1/RedDrumInfo",
+    "Id": "RedDrumInfo",
+    "Name": "RedDrum Redfish Service Development Info",
+    "RedfishDevSpecVersion": "1.0.5",
+    "RedDrum Version": "0.9.0",
+    "HTTPD": "Apache httpd",
+    "RESTengine": "Flask",
+    "Repo":  "https://github.com/DellESI/RedDrum-Redfish-Service"
+}
