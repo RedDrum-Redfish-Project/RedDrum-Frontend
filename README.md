@@ -71,37 +71,59 @@ RedDrum are made, additional testing will be made.
 
 ---
 ## How to Install
-#### Install from git clone
+#### Install from a Cloned Repo
 * An easy way to install the RedDrum-Frontend during development is to clone the repo and then include the repo directory in the python path of the code that is using it
-  * `cd the directory where above where you want to clone the repo`
-  * `git clone http://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  RedDrum-Frontend`
-    * this will get all of the code, data files, documentation, tools, and README.txts
-  * put the RedDrum-Frontend directory in the python-path of the code that starts the RedDrum service
-    * see RedDrum-Simulator/RedDrumMain.py for an example
-      * you can use `sys.path.append(<pathTo_RedDrum-Frontend_cloneDirectory)` before executing imports from reddrum_frontend
-      * see **How to Start a Redfish Service Using RedDrum-Frontend below**
-  * pip install RedDrum-Frontend from the cloned repo directory to put it into your site-packages
-    * cd to the directory that hols the cloned RedDrum-Frontend  repo dir
-    * `pip install ./RedDrum-Frontend`
 
-#### Install using `pip install` from github (currently testing)
-* ***currently verifying that installing directly from github using pip install***
-* this is achievable using `git git+https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend.git`
-  * the data should go into your local site packages
-  * note that some data files are used and must be included in the package--***fixing soon if this doesn't work now***
+```
+    # clone the repo
+    cd <directory-above-where-you-want-the-cloned-repo>
+    git clone https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  
+       # this will get all of the code, data files, documentation, tools, and README.txts
+
+    # put the "reddrum_frontend" package from RedDrum-Frontend clone directory into site packages in the python path
+    # case1: to install in non-editable mode (where you cant edit the Frontend code for development):
+    pip install ./RedDrum-Frontend
+
+    # case2:  to install in "editible mode" where any changes you make to the Frontend Repo will show up in the site pkg
+    pip install -e ./RedDrum-Frontend
+
+    # and to uninstall, simply run:
+    pip uninstall reddrum_frontend
+```
+
+#### Install using `pip install` from the RedDrum-Frontend github github repo
+* This gets the latest version of Frontend on github and installs it into your local site-packages
+* The package name is `reddrum_frontend`
+  * Code that wants to use the Frontend, can simply run: `from reddrum_frontend import <api>`
+  * See the redDrumMain.py for example of how to use the Frontend APIs to start a Redfish Service
+  * Also see documentation of the Frontend APIs used by redDrumMain.py in  RedDrum-Frontend/reddrum_frontend/README.txt 
+
+```
+    # install from github using pip install
+    pip install git+https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend.git
+
+```
 
 #### Install using `pip install` from pypi (not working yet)
-* RedDrum-Frontend is not yet registered with pypi
-* once that is done, you can `pip install RedDrum-Frontend` 
-  * This will install the package package `reddrum_frontend` into your local site-packages
-  * The RedDrum-Simulator Main script `redDrumSimulator.py`  will import the APIs it needs from `reddrum_frontend`
-  * Then any program using RedDrum-Frontend only has to execute  `from reddrum_frontend import <api>`
-    * see the example reddrum_frontend/README.txt and redDrumMain.py for how to use the Frontend APIs to start a Redfish Service
+* ***RedDrum-Frontend is not yet registered with pypi***
+* Once That is done:
+  * This will gets the latest version of Frontend on github and installs it into your local site-packages
+    * Code that wants to use the Frontend, can simply run: `from reddrum_frontend import <api>`
+    * See the redDrumMain.py for example of how to use the Frontend APIs to start a Redfish Service
+    * Also see documentation of the Frontend APIs used by redDrumMain.py in  RedDrum-Frontend/reddrum_frontend/README.txt 
+    * you can run the following commands and it will install RedDrum-Frontend to your site-packages
+  * The package name is `reddrum_frontend`
+
+```
+    # install from pypi using pip install
+     pip install RedDrum-Frontend` 
+```
 
 
-### How to Start a Redfish Service Using RedDrum-Frontend
-* see RedDrum-Frontend/reddrum_frontent/README.txt for details re the APIs that the Main Start script uses
-* Or look at the redDrumMain.py script in RedDrum-Simulator or RedDrum-OpenBMC as an example
+### How to Start a Redfish Service Using reddrum_frontend from RedDrum-Frontend
+* See RedDrum-Frontend/reddrum_frontent/README.txt for details re the APIs that the Main Start script uses
+* Or look at the redDrumSimulatorMain.py script in RedDrum-Simulator or RedDrum-OpenBMC as an example
   * the redDrumMain.py in RedDrum-Frontend is used to test frontend services w/ a stubbed out backend
-* more detail docs on How to Use coming
+  * you can look at it if you clone the Frontend repo--it doesn't install from pip
+* More detail docs on How to Use coming...
 ---

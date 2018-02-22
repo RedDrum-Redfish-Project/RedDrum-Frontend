@@ -24,5 +24,5 @@ setup(name='RedDrum-Frontend',
           'pytz'              # used by Frontend
       ],
       include_package_data = True,
-      package_data={'':['*.json', '*.xml', '*.conf']}
+      package_data={'reddrum_frontend':['Data/db/*.json','Data/static/*','Data/templates/*.json','Data/registries/*.json','*.conf']}
 )
