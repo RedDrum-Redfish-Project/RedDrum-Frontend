@@ -1,0 +1,6 @@
+{
+    "Id": "EventService",
+    "ServiceEnabled": true,
+    "DeliveryRetryAttempts": 3,
+    "DeliveryRetryIntervalSeconds": 30
+}
