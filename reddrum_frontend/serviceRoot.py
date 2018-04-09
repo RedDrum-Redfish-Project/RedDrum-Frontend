@@ -166,9 +166,10 @@ class RfServiceRoot():
         self.odata=self.RfOdataServiceDocument(rfr,"base","static","OdataServiceDocument.json")
         self.metadata=self.RfMetadataDocument(rfr,"base","static","ServiceMetadata.xml",contentType="xml")
 
-        #create the sessionService and AccountService classes
+        #create the sessionService, AccountService and EventService classes
         self.sessionService=RfSessionService(rfr)
         self.accountService=RfAccountService(rfr)
+        self.eventService=RfEventService(rfr)
 
         #create the JsonSchemas and Registries classes
         self.jsonSchemas = RfJsonSchemas(rfr)
