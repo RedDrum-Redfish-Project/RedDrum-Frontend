@@ -40,7 +40,7 @@
     </edmx:Reference>
     <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/EventService_v1.xml">
         <edmx:include Namespace="EventService" />
-        <edmx:Include Namespace="EventService.v1_0_0"/>
+        <edmx:Include Namespace="EventService.v1_1_0"/>
     </edmx:Reference>
     <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/IPAddresses_v1.xml">
         <edmx:include Namespace="IPAddresses" />
