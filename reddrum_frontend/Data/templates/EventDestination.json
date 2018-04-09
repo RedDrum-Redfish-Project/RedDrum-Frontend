@@ -1,0 +1,4 @@
+{
+    "@odata.context": "/redfish/v1/$metadata#EventDestination.EventDestination",
+    "@odata.type": "#EventDestination.v1_3_0.EventDestination"
+}
