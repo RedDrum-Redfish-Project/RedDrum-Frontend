@@ -55,7 +55,7 @@
     </edmx:reference>
     <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/EventDestination_v1.xml">
         <edmx:include Namespace="EventDestination" />
-        <edmx:Include Namespace="EventDestination.v1_0_0"/>
+        <edmx:Include Namespace="EventDestination.v1_3_0"/>
     </edmx:Reference>
     <edmx:reference uri="http://redfish.dmtf.org/schemas/v1/EventDestinationCollection_v1.xml">
         <edmx:include Namespace="EventDestinationCollection" />
