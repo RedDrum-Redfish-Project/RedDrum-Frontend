@@ -10,6 +10,7 @@ import sys
 from  .resource         import  RfStaticResource 
 from  .sessionService   import RfSessionService
 from  .accountService   import RfAccountService
+from  .eventService     import RfEventService
 from  .jsonSchemas      import RfJsonSchemas
 from  .registries       import RfRegistries
 

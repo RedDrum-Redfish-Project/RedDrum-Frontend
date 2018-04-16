@@ -16,30 +16,29 @@ from .redfish_headers import RfAddHeaders
 class RfEventService():  
     # Note that this resource was created in serviceRoot for the Account service.
     def __init__(self,rdr ):
-        #TODO kill rfr references
-        self.rfr=rfr
-        self.rdr=rfr
-        self.loadResourceTemplates(rfr )
-        self.loadAccountServiceDatabaseFiles(rfr )
-        self.initializeAccountsDict(rfr)
+        #TODO kill rdr references
+        self.rdr=rdr
+        self.loadResourceTemplates(rdr )
+        self.loadEventServiceDatabaseFiles(rdr )
+        self.initializeEventDestinationCollectionDict(rdr)
 
-        self.hdrs=RfAddHeaders(rfr)
+        self.hdrs=RfAddHeaders(rdr)
 
-    def loadResourceTemplates( self, rfr ):
+    def loadResourceTemplates( self, rdr ):
         #load AccountService Template
-        self.accountServiceTemplate=self.loadResourceTemplateFile(rfr.baseDataPath,"templates", "AccountService.json")
+        self.eventServiceTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventService.json")
 
         #load Accounts Collection Template
-        self.accountsCollectionTemplate=self.loadResourceTemplateFile(rfr.baseDataPath,"templates", "ManagerAccountCollection.json")
+        self.eventDestinationCollectionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestinationCollection.json")
 
         #load Account Entry Template
-        self.accountEntryTemplate=self.loadResourceTemplateFile(rfr.baseDataPath,"templates", "ManagerAccount.json")
+        #self.accountEntryTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "ManagerAccount.json")
 
         #load Roles Collection Template
-        self.rolesCollectionTemplate=self.loadResourceTemplateFile(rfr.baseDataPath,"templates", "RoleCollection.json")
+        #self.rolesCollectionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "RoleCollection.json")
 
         #load Roles Entry Template
-        self.roleEntryTemplate=self.loadResourceTemplateFile(rfr.baseDataPath,"templates", "Role.json")
+        self.EventDestinationTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestination.json")
 
     # worker function called by loadResourceTemplates() to load a specific template
     # returns a dict loaded of the template file, which calling function saves to a variable
@@ -51,42 +50,42 @@ class RfEventService():
             response=json.loads( open(indxFilePath,"r").read() )
             return(response)
         else:
-            self.rfr.logMsg("CRITICAL", 
-               "*****ERROR: AccountService: Json Data file:{} Does not exist. Exiting.".format(indxFilePath))
+            self.rdr.logMsg("CRITICAL", 
+               "*****ERROR: EventService: Json Data file:{} Does not exist. Exiting.".format(indxFilePath))
             sys.exit(10)
         
-    def loadAccountServiceDatabaseFiles(self, rfr ):
-        # load the AccountService database file:      "AccountServiceDb.json"
-        filename="AccountServiceDb.json"
-        self.accountServiceDbFilePath,self.accountServiceDb=self.loadDatabaseFile(rfr,"db",filename) 
+    def loadEventServiceDatabaseFiles(self, rdr ):
+        # load the EventService database file:      "EventServiceDb.json"
+        filename="EventServiceDb.json"
+        self.eventServiceDbFilePath,self.eventServiceDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-        # load the Accounts collection database file: "AccountsDb.json"
-        filename="AccountsDb.json"
-        self.accountsDbFilePath,self.accountsDb=self.loadDatabaseFile(rfr,"db",filename) 
+        # load the Events collection database file: "EventsDb.json"
+        filename="EventDestinationCollectionDb.json"
+        self.eventDestinationCollectionDbFilePath,self.eventDestinationCollectionDb=self.loadDatabaseFile(rdr,"db",filename) 
 
         # load the Roles collection  database file:     "RolesDb.json"
-        filename="RolesDb.json"
-        self.rolesDbFilePath,self.rolesDb=self.loadDatabaseFile(rfr,"db",filename) 
+        filename="EventDestination.json"
+        self.rolesDbFilePath,self.rolesDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-    # worker function called by loadAccountServiceDatabaseFiles() to load a specific database file
+    # worker function called by loadEventServiceDatabaseFiles() to load a specific database file
     # returns two positional parameters:
     #    the database filepath,
     #    a dict of the database file
     # if file does not exist in the varDataPath/subDir directory (the database dir), 
     #   then it loads the file from baseDataBath (the default database), and saves it back to the varDataPath dir
     # assumes good json in the database file
-    def loadDatabaseFile( self, rfr, subDir, filename ):
-        dbFilePath=os.path.join(rfr.varDataPath,subDir, filename)
+    def loadDatabaseFile( self, rdr, subDir, filename ):
+        dbFilePath=os.path.join(rdr.varDataPath,subDir, filename)
         if os.path.isfile(dbFilePath):
             dbDict=json.loads( open(dbFilePath,"r").read() )
         else:
-            self.rfr.logMsg("INFO","*****WARNING: Json Data file:{} Does not exist. Creating default.".format(dbFilePath))
+            self.rdr.logMsg("INFO","*****WARNING: Json Data file:{} Does not exist. Creating default.".format(dbFilePath))
             # read the data in from the default database dir with the rm-tools package
-            dfltDbFilePath=os.path.join(rfr.baseDataPath,subDir,filename)
+            dfltDbFilePath=os.path.join(rdr.baseDataPath,subDir,filename)
             if os.path.isfile(dfltDbFilePath):
                 dbDict=json.loads( open(dfltDbFilePath,"r").read() )
             else:
-                self.rfr.logMsg("CRITICAL", 
+                self.rdr.logMsg("CRITICAL", 
                     "*****ERROR: Default Json Database file:{} Does not exist. Exiting.".format(dfltDbFilePath))
                 sys.exit(10)
             #write the data back out to the var directory where the dynamic db info is kept
@@ -96,23 +95,23 @@ class RfEventService():
         # return path and data
         return(dbFilePath,dbDict)
 
-    def clearAccountServiceDatabaseFiles(self, rfr ):
+    def clearEventServiceDatabaseFiles(self, rdr ):
         # clear the AccountService database file:      "AccountServiceDb.json"
-        filename="AccountServiceDb.json"
-        self.accountServiceDb=self.clearDatabaseFile(rfr,"db",filename) 
+        filename="EventServiceDb.json"
+        self.eventServiceDb=self.clearDatabaseFile(rdr,"db",filename) 
 
         # clear the Accounts collection database file: "AccountsDb.json"
-        filename="AccountsDb.json"
-        self.accountsDb=self.clearDatabaseFile(rfr,"db",filename) 
+        filename="EventDestinationCollectionDb.json"
+        self.eventDestinationCollectionDb=self.clearDatabaseFile(rdr,"db",filename) 
 
         # clear the Roles collection  database file:     "RolesDb.json"
-        filename="RolesDb.json"
-        self.rolesDb=self.clearDatabaseFile(rfr,"db",filename) 
+        filename="EventDestination.json"
+        self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
 
 #TODO look at how chassis does the clear and follow
-    def clearDatabaseFile( self, rfr, subDir, filename ):
+    def clearDatabaseFile( self, rdr, subDir, filename ):
         clearedDb=dict()
-        dbFilePath=os.path.join(rfr.varDataPath,subDir, filename)
+        dbFilePath=os.path.join(rdr.varDataPath,subDir, filename)
         #write the data back out to the var directory where the dynamic db info is kept
         #dbDictJson=json.dumps(clearedDb,indent=4)
         #with open( dbFilePath, 'w', encoding='utf-8') as f:
@@ -123,33 +122,32 @@ class RfEventService():
         return(clearedDb)
 
 #TODO add properties for Subscription retry
-    def initializeAccountsDict(self,rfr):
-        # this is the in-memory database of account properties that are not persistent
-        # the accountsDict is a dict indexed by   accountsDict[accountid][<nonPersistentAccountParameters>]
-        #   self.accountsDict[accountid]=
+    def initializeEventDestinationCollectionDict(self,rdr):
+        # this is the in-memory database of eventDestination properties that are not persistent
+        # the eventDestinationCollectionDict is a dict indexed by   eventDestinationCollectionDict[accountid][<nonPersistentAccountParameters>]
+        #   self.eventDestinationCollectionDict[eventdestinationid]=
         #       { "Locked": <locked>,  "FailedLoginCount": <failedLoginCnt>, "LockedTime": <lockedTimestamp>,
         #         "AuthFailTime": <authFailTimestamp> }
-        self.accountsDict=dict() #create an empty dict of Account entries
+        self.eventDestinationCollectionDict=dict() #create an empty dict of EventDestination entries
         curTime=time.time()
 
-        #create the initial state of the accountsDict from the accountsDb
+        #create the initial state of the eventDestinationCollectionDict from the eventDestinationCollectionDb
         #for subscription in eventSubscriptionDb:
-            #self.accountsDict[acct]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
-        for acct in self.accountsDb:
-            self.accountsDict[acct]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
+        for eventDestination in self.eventDestinationCollectionDb:
+            self.eventDestinationCollectionDict[eventDestination]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
         
             
 #    # GET AccountService
 #    def getAccountServiceResource(self,request):
 #        # generate headers
-#        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.accountServiceTemplate, allow="GetPatch")
+#        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.eventServiceTemplate, allow="GetPatch")
 #
 #        # Process HEAD method
 #        if request.method=="HEAD":
 #            return(0,200,"","",hdrs)
 #
 #        # create a copy of the AccountService resource template 
-#        resData2=dict(self.accountServiceTemplate)
+#        resData2=dict(self.eventServiceTemplate)
 #
 #        # add required properties
 #        resData2["@odata.id"] = "/redfish/v1/AccountService"
@@ -161,16 +159,16 @@ class RfEventService():
 #        resData2["Accounts"] = { "@odata.id": "/redfish/v1/AccountService/Accounts" }
 #        resData2["Roles"] = { "@odata.id": "/redfish/v1/AccountService/Roles" }
 #
-#        # set the dynamic data in the template copy to the value in the accountService database
-#        resData2["AuthFailureLoggingThreshold"]=self.accountServiceDb["AuthFailureLoggingThreshold"]
-#        resData2["MinPasswordLength"]=self.accountServiceDb["MinPasswordLength"]
-#        resData2["AccountLockoutThreshold"]=self.accountServiceDb["AccountLockoutThreshold"]
-#        resData2["AccountLockoutDuration"]=self.accountServiceDb["AccountLockoutDuration"]
-#        resData2["AccountLockoutCounterResetAfter"]=self.accountServiceDb["AccountLockoutCounterResetAfter"]
-#        if "MaxPasswordLength" in self.accountServiceDb:  # early RedDrum did not support MaxPasswordLength
-#            resData2["MaxPasswordLength"] = self.accountServiceDb["MaxPasswordLength"]
-#        if "ServiceEnabled" in self.accountServiceDb:  # early RedDrum did not support ServiceEnabled
-#            resData2["ServiceEnabled"]= self.accountServiceDb["ServiceEnabled"]
+#        # set the dynamic data in the template copy to the value in the eventService database
+#        resData2["AuthFailureLoggingThreshold"]=self.eventServiceDb["AuthFailureLoggingThreshold"]
+#        resData2["MinPasswordLength"]=self.eventServiceDb["MinPasswordLength"]
+#        resData2["AccountLockoutThreshold"]=self.eventServiceDb["AccountLockoutThreshold"]
+#        resData2["AccountLockoutDuration"]=self.eventServiceDb["AccountLockoutDuration"]
+#        resData2["AccountLockoutCounterResetAfter"]=self.eventServiceDb["AccountLockoutCounterResetAfter"]
+#        if "MaxPasswordLength" in self.eventServiceDb:  # early RedDrum did not support MaxPasswordLength
+#            resData2["MaxPasswordLength"] = self.eventServiceDb["MaxPasswordLength"]
+#        if "ServiceEnabled" in self.eventServiceDb:  # early RedDrum did not support ServiceEnabled
+#            resData2["ServiceEnabled"]= self.eventServiceDb["ServiceEnabled"]
 #
 #        # create the response json data and return
 #        resp=json.dumps(resData2,indent=4)
@@ -199,8 +197,8 @@ class RfEventService():
 #                patchData[key]=numVal
 #
 #        # then verify the properties passed-in are in valid ranges
-#        newDuration=self.accountServiceDb["AccountLockoutDuration"]
-#        newResetAfter=self.accountServiceDb["AccountLockoutCounterResetAfter"]
+#        newDuration=self.eventServiceDb["AccountLockoutDuration"]
+#        newResetAfter=self.eventServiceDb["AccountLockoutCounterResetAfter"]
 #        if( "AccountLockoutDuration" in patchData ):
 #            newDuration=patchData["AccountLockoutDuration"]
 #        if( "AccountLockoutCounterResetAfter" in patchData ):
@@ -208,19 +206,19 @@ class RfEventService():
 #        if( newDuration < newResetAfter ):
 #            return(4,400,"Bad Request-Invalid value","",hdrs)
 #
-#        # if here, all values are good. Update the accountServiceDb dict
+#        # if here, all values are good. Update the eventServiceDb dict
 #        for key in patchData:
-#            self.accountServiceDb[key]=patchData[key]
+#            self.eventServiceDb[key]=patchData[key]
 #
-#        # write the data back out to the accountService database file
-#        accountServiceDbJson=json.dumps(self.accountServiceDb,indent=4)
-#        with open( self.accountServiceDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(accountServiceDbJson)
+#        # write the data back out to the eventService database file
+#        eventServiceDbJson=json.dumps(self.eventServiceDb,indent=4)
+#        with open( self.eventServiceDbFilePath, 'w', encoding='utf-8') as f:
+#            f.write(eventServiceDbJson)
 #        return(0, 204, "", "", hdrs)
 #
 #    # getAccountAuthInfo(username,password)
 #    #   returns: rc, errMsgString, accountId, roleId, userPrivileges
-#    #      rc=404 if username is not in accountsDb
+#    #      rc=404 if username is not in eventDestinationCollectionDb
 #    #      rc=401 if username is invalid or mismatches password, or account is locked or not enabled
 #    #        =0   if authenticated
 #    #   self.accountsDict[accountid]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
@@ -238,8 +236,8 @@ class RfEventService():
 #
 #        # from username, lookup accountId --- they are not necessarily the same
 #        accountid=None
-#        for acctid in self.accountsDb:
-#            if( username == self.accountsDb[acctid]["UserName"] ):
+#        for acctid in self.eventDestinationCollectionDb:
+#            if( username == self.eventDestinationCollectionDb[acctid]["UserName"] ):
 #                accountid=acctid
 #                break
 #
@@ -249,7 +247,7 @@ class RfEventService():
 #            return(404, "Not Found-Username Not Found",None,None,None)
 #
 #        # check if the account is disabled
-#        if( self.accountsDb[accountid]["Enabled"] is False ): 
+#        if( self.eventDestinationCollectionDb[accountid]["Enabled"] is False ): 
 #            return(401, "Not Authorized--Account Disabled",None,None,None)
 #
 #        # check if account was locked 
@@ -257,7 +255,7 @@ class RfEventService():
 #        #    if it is locked and not exceeded lockout duration, return 401 Not authorized
 #        curTime=time.time()
 #        if self.accountsDict[accountid]["Locked"] is True:
-#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.accountServiceDb["AccountLockoutDuration"] ):
+#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.eventServiceDb["AccountLockoutDuration"] ):
 #                # the lockout duration has expired.   unlock it.
 #                self.accountsDict[accountid]["Locked"]=False
 #                self.accountsDict[accountid]["LockedTime"]=0
@@ -273,7 +271,7 @@ class RfEventService():
 #        authFailTime=self.accountsDict[accountid]["AuthFailTime"]
 #        if( authFailTime != 0 ):
 #            # if we have had failures and are counting authentication failures
-#            resetAfterThreshold=self.accountServiceDb["AccountLockoutCounterResetAfter"]
+#            resetAfterThreshold=self.eventServiceDb["AccountLockoutCounterResetAfter"]
 #            if( ( curTime - authFailTime ) > resetAfterThreshold ):
 #                # if time since last failure is greater than the reset counter threshold, then reset the counters
 #                self.accountsDict[accountid]["AuthFailTime"]=0
@@ -282,13 +280,13 @@ class RfEventService():
 #        #now check the associated password to see if authentication passis this time 
 #        #check password
 #        #xg11
-#        #if( password != self.accountsDb[accountid]["Password"] ): # TODO change to check hash
-#        if self.cryptContext.verify(password, self.accountsDb[accountid]["Password"]) is not True:
+#        #if( password != self.eventDestinationCollectionDb[accountid]["Password"] ): # TODO change to check hash
+#        if self.cryptContext.verify(password, self.eventDestinationCollectionDb[accountid]["Password"]) is not True:
 #            # authentication failed.
 #
 #            # check if lockout on authentication failures is enabled
-#            lockoutThreshold=self.accountServiceDb["AccountLockoutThreshold"]
-#            lockoutDuration=self.accountServiceDb["AccountLockoutDuration"]
+#            lockoutThreshold=self.eventServiceDb["AccountLockoutThreshold"]
+#            lockoutDuration=self.eventServiceDb["AccountLockoutDuration"]
 #
 #            # lockoutThreshold and lockoutDuration must BOTH be non-zero to enable lock on auth failures
 #            if( (lockoutThreshold > 0) and (lockoutDuration > 0) ):
@@ -316,8 +314,8 @@ class RfEventService():
 #        self.accountsDict[accountid]["FailedLoginCount"]=0
 #        self.accountsDict[accountid]["AuthFailTime"]=0
 #
-#        storedpassword=self.accountsDb[accountid]["Password"]
-#        storedRoleId=self.accountsDb[accountid]["RoleId"]
+#        storedpassword=self.eventDestinationCollectionDb[accountid]["Password"]
+#        storedRoleId=self.eventDestinationCollectionDb[accountid]["RoleId"]
 #        storedPrivileges=self.rolesDb[storedRoleId]["AssignedPrivileges"]
 #
 #        # if here, all ok, return privileges
@@ -382,16 +380,16 @@ class RfEventService():
 #        else:
 #            allowMethods=["HEAD","GET","PATCH","DELETE"],
 #        respHdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=allowMethods,
-#                                     resource=self.roleEntryTemplate)
+#                                     resource=self.EventDestinationTemplate)
 #        if request.method=="HEAD":
 #            return(0,200,"","",respHdrs)
 #
-#        # copy the template roleEntry resource
-#        resData2=dict(self.roleEntryTemplate)
+#        # copy the template EventDestination resource
+#        resData2=dict(self.EventDestinationTemplate)
 #
 #        # now overwrite the dynamic data from the rolesDb 
-#        roleEntryUri="/redfish/v1/AccountService/Roles/" + roleid
-#        resData2["@odata.id"]=roleEntryUri
+#        EventDestinationUri="/redfish/v1/AccountService/Roles/" + roleid
+#        resData2["@odata.id"]=EventDestinationUri
 #        resData2["Id"]=roleid
 #        resData2["Name"]=self.rolesDb[roleid]["Name"]
 #        resData2["Description"]=self.rolesDb[roleid]["Description"]
@@ -461,7 +459,7 @@ class RfEventService():
 #        self.rolesDb[roleId]={"RoleId": roleId, "Name": roleName, "Description": roleDescription, "IsPredefined": isPredefined, 
 #            "AssignedPrivileges": privileges }
 #
-#        # write the data back out to the accountService/Roles database file
+#        # write the data back out to the eventService/Roles database file
 #        rolesDbJson=json.dumps(self.rolesDb,indent=4)
 #        with open( self.rolesDbFilePath, 'w', encoding='utf-8') as f:
 #            f.write(rolesDbJson)
@@ -473,7 +471,7 @@ class RfEventService():
 #            return(5, 500, "Error Getting New Role Data","",{})
 #
 #        # get the response Header with Link and Location headers
-#        respHeaderData = self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.roleEntryTemplate)
+#        respHeaderData = self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.EventDestinationTemplate)
 #
 #        #return to flask uri handler, include location header
 #        return(0, 201, "Created",respData,respHeaderData)
@@ -506,8 +504,8 @@ class RfEventService():
 #            roleidName=roleid
 #        
 #        roleIdIsUsed=False
-#        for accountid in self.accountsDb:
-#            if self.accountsDb[accountid]["RoleId"]==roleidName:
+#        for accountid in self.eventDestinationCollectionDb:
+#            if self.eventDestinationCollectionDb[accountid]["RoleId"]==roleidName:
 #                roleIdIsUsed=True
 #        if roleIdIsUsed is True:
 #            return(4, 409, "Conflict-Role is being used by an existing user account", "", hdrs)
@@ -546,7 +544,7 @@ class RfEventService():
 #                if not privilege in redfishPrivileges:
 #                    return (4, 400, "Bad Request-one or more Privileges are invalid", "",hdrs)
 #
-#        # if here, all values are good. Update the accountServiceDb dict
+#        # if here, all values are good. Update the eventServiceDb dict
 #        self.rolesDb[roleid]["AssignedPrivileges"]=patchData["AssignedPrivileges"]
 #
 #        #xg5 note: service currently does not support oem privileges
@@ -565,20 +563,20 @@ class RfEventService():
 #    # GET Accounts Collection
 #    def getAccountsCollectionResource(self, request ):
 #        hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
-#                                     resource=self.accountsCollectionTemplate)
+#                                     resource=self.eventDestinationCollectionTemplate)
 #        if request.method=="HEAD":
 #            return(0,200,"","",hdrs)
 #
 #        # the routine copies a template file with the static redfish parameters
-#        # then it updates the dynamic properties from the accountsDb and accountsDict
+#        # then it updates the dynamic properties from the eventDestinationCollectionDb and accountsDict
 #
-#        # copy the accountsCollection template file (which has an empty accounts array)
-#        resData2=dict(self.accountsCollectionTemplate)
+#        # copy the eventDestinationCollection template file (which has an empty accounts array)
+#        resData2=dict(self.eventDestinationCollectionTemplate)
 #        count=0
-#        # now walk through the entries in the accountsDb and built the accountsCollection Members array
+#        # now walk through the entries in the eventDestinationCollectionDb and built the eventDestinationCollection Members array
 #        # note that the template starts out an empty array
 #        accountUriBase="/redfish/v1/AccountService/Accounts/"
-#        for accountEntry in self.accountsDb:
+#        for accountEntry in self.eventDestinationCollectionDb:
 #            # increment members count, and create the member for the next entry
 #            count=count+1
 #            memberUri=accountUriBase + accountEntry
@@ -598,7 +596,7 @@ class RfEventService():
 #    # GET Account Entry
 #    def getAccountEntry(self, request, accountid):
 #        # verify that the accountId is valid
-#        if accountid not in self.accountsDb:
+#        if accountid not in self.eventDestinationCollectionDb:
 #            # generate error header for 4xx errors
 #            errhdrs=self.hdrs.rfRespHeaders(request)
 #            return(4, 404, "Not Found","",errhdrs)
@@ -609,10 +607,10 @@ class RfEventService():
 #        # generate header info depending on the specific accountid
 #        #    accounts with property "Deletable"=False cannot be deleted
 #        #    for RedDrum, this includes accountid "root"
-#        #    for reference:   self.accountsDb[accountid]=
+#        #    for reference:   self.eventDestinationCollectionDb[accountid]=
 #        #          {"UserName": username,    "Password": password, 
 #        #          "RoleId": roleId,    "Enabled": enabled,    "Deletable": True}
-#        if self.accountsDb[accountid]["Deletable"] is False:
+#        if self.eventDestinationCollectionDb[accountid]["Deletable"] is False:
 #            allowMethods="GetPatch"
 #        else:
 #            allowMethods=["HEAD","GET","PATCH","DELETE"]
@@ -621,23 +619,23 @@ class RfEventService():
 #        #    if so, then unlock before returning data
 #        curTime=time.time()
 #        if self.accountsDict[accountid]["Locked"] is True:
-#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.accountServiceDb["AccountLockoutDuration"] ):
+#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.eventServiceDb["AccountLockoutDuration"] ):
 #                # the lockout duration has expired.   unlock it.
 #                self.accountsDict[accountid]["Locked"]=False
 #                self.accountsDict[accountid]["LockedTime"]=0
 #                self.accountsDict[accountid]["FailedLoginCount"]=0
 #                self.accountsDict[accountid]["AuthFailTime"]=0
 #
-#        # now overwrite the dynamic data from the accountsDb
+#        # now overwrite the dynamic data from the eventDestinationCollectionDb
 #        accountUri="/redfish/v1/AccountService/Accounts/" + accountid
-#        accountRoleId=self.accountsDb[accountid]["RoleId"]
+#        accountRoleId=self.eventDestinationCollectionDb[accountid]["RoleId"]
 #        resData["@odata.id"]=accountUri
 #        resData["Id"]=accountid
 #        resData["Name"]="UserAccount"
 #        resData["Description"]="Local Redfish User Account"
-#        resData["Enabled"]=self.accountsDb[accountid]["Enabled"]
+#        resData["Enabled"]=self.eventDestinationCollectionDb[accountid]["Enabled"]
 #        resData["Password"]=None   # translates to Json: null
-#        resData["UserName"]=self.accountsDb[accountid]["UserName"]
+#        resData["UserName"]=self.eventDestinationCollectionDb[accountid]["UserName"]
 #        resData["RoleId"]=accountRoleId
 #        roleUri="/redfish/v1/AccountService/Roles/" + accountRoleId
 #        resData["Links"]={ "Role": {} }
@@ -666,11 +664,11 @@ class RfEventService():
 #    #    this is a STRONG Etag
 #    #    Example:   etag="1ABCDEREDR"
 #    def calculateAccountEtag(self, accountid):
-#        enable   = self.accountsDb[accountid]["Enabled"]
+#        enable   = self.eventDestinationCollectionDb[accountid]["Enabled"]
 #        locked   = self.accountsDict[accountid]["Locked"]  
-#        username = self.accountsDb[accountid]["UserName"]
-#        password = self.accountsDb[accountid]["Password"]
-#        roleId   = self.accountsDb[accountid]["RoleId"]
+#        username = self.eventDestinationCollectionDb[accountid]["UserName"]
+#        password = self.eventDestinationCollectionDb[accountid]["Password"]
+#        roleId   = self.eventDestinationCollectionDb[accountid]["RoleId"]
 #        #etag="\"1234\""
 #
 #        flag = 0
@@ -728,16 +726,16 @@ class RfEventService():
 #        # now verify that the Post data is valid
 #
 #        # check if this username already exists
-#        for userId in self.accountsDb:
-#            if (username == self.accountsDb[userId]["UserName"]):
+#        for userId in self.eventDestinationCollectionDb:
+#            if (username == self.eventDestinationCollectionDb[userId]["UserName"]):
 #                return (4, 400, "Bad Request-Username already exists", "",errhdrs)
 #
-#        # check if password length is less than value set in accountService MinPasswordLength
-#        if "MinPasswordLength" in self.accountServiceDb:
-#            if len(password) < self.accountServiceDb["MinPasswordLength"]:
+#        # check if password length is less than value set in eventService MinPasswordLength
+#        if "MinPasswordLength" in self.eventServiceDb:
+#            if len(password) < self.eventServiceDb["MinPasswordLength"]:
 #                return (4, 400, "Bad Request-Password length less than min", "",errhdrs)
-#        if "MaxPasswordLength" in self.accountServiceDb:
-#            if len(password) > self.accountServiceDb["MaxPasswordLength"]:
+#        if "MaxPasswordLength" in self.eventServiceDb:
+#            if len(password) > self.eventServiceDb["MaxPasswordLength"]:
 #                return (4, 400, "Bad Request-Password length exceeds max", "",errhdrs)
 #        # check if password meets regex requirements---no whitespace or ":"
 #        passwordMatchPattern="^[^\s:]+$"
@@ -774,8 +772,8 @@ class RfEventService():
 #        accountid=username
 #        locationUri="/redfish/v1/AccountService/Accounts/" + accountid
 #
-#        # add the new account entry to the accountsDb
-#        self.accountsDb[accountid]={"UserName": username, "Password": password, 
+#        # add the new account entry to the eventDestinationCollectionDb
+#        self.eventDestinationCollectionDb[accountid]={"UserName": username, "Password": password, 
 #                  "RoleId": roleId, "Enabled": enabled, "Deletable": True}
 #
 #        # add the new account entry to the accountsDict
@@ -783,8 +781,8 @@ class RfEventService():
 #        self.accountsDict[accountid]=dfltAccountDictEntry
 #
 #        # write the AccountDb back out to the file
-#        dbFilePath=os.path.join(self.rfr.varDataPath,"db", "AccountsDb.json")
-#        dbDictJson=json.dumps(self.accountsDb, indent=4)
+#        dbFilePath=os.path.join(self.rdr.varDataPath,"db", "AccountsDb.json")
+#        dbDictJson=json.dumps(self.eventDestinationCollectionDb, indent=4)
 #        with open( dbFilePath, 'w', encoding='utf-8') as f:
 #            f.write(dbDictJson)
 #        
@@ -809,19 +807,19 @@ class RfEventService():
 #    # DELETE Account
 #    # delete the Account
 #    # all we have to do is verify the accountid is correct--
-#    # and then, if it is valid, delete the entry for that accountid from the accountsDb and accountsDict
+#    # and then, if it is valid, delete the entry for that accountid from the eventDestinationCollectionDb and accountsDict
 #    def deleteAccount(self, request, accountid):
 #        # generate the headers
 #        hdrs=self.hdrs.rfRespHeaders(request)
 #
 #        # First, verify that the accountid is valid, 
-#        if accountid not in self.accountsDb:
+#        if accountid not in self.eventDestinationCollectionDb:
 #            return(4, 404, "Not Found","",hdrs)
 #
 #        # check if this is a deletable account
-#        if "Deletable" in self.accountsDb[accountid]:
-#            if self.accountsDb[accountid]["Deletable"] is True:
-#                del self.accountsDb[accountid]
+#        if "Deletable" in self.eventDestinationCollectionDb[accountid]:
+#            if self.eventDestinationCollectionDb[accountid]["Deletable"] is True:
+#                del self.eventDestinationCollectionDb[accountid]
 #            else:
 #                # get allow headers
 #                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
@@ -831,11 +829,11 @@ class RfEventService():
 #        if accountid in self.accountsDict:
 #            del self.accountsDict[accountid]
 #
-#        # write the data back out to the accountService database file
-#        accountsDbJson=json.dumps(self.accountsDb,indent=4)
+#        # write the data back out to the eventService database file
+#        eventDestinationCollectionDbJson=json.dumps(self.eventDestinationCollectionDb,indent=4)
 #        filename="AccountsDb.json"
-#        with open( self.accountsDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(accountsDbJson)
+#        with open( self.eventDestinationCollectionDbFilePath, 'w', encoding='utf-8') as f:
+#            f.write(eventDestinationCollectionDbJson)
 #
 #        return(0, 204, "No Content","",hdrs)
 #
@@ -850,7 +848,7 @@ class RfEventService():
 #        errhdrs = self.hdrs.rfRespHeaders(request )
 #
 #        # First, verify that the accountid is valid, 
-#        if accountid not in self.accountsDb:
+#        if accountid not in self.eventDestinationCollectionDb:
 #            return(4, 404, "Not Found", "", errhdrs)
 #
 #        # 2nd if Password is in patch data, make sure that the request used https, or that credential update over http was enabled
@@ -900,7 +898,7 @@ class RfEventService():
 #        #     otherwise, per redfish spec, we would need to generate extended data detailing which properties cant be updated and why
 #        for prop in patchData:
 #            if prop not in userHasPrivilegeToPatchProperties:
-#                self.rfr.logMsg("WARNING",
+#                self.rdr.logMsg("WARNING",
 #                   "403 Unauthorized-Patch Account: User does not have privilege to update account prop: {}".format(prop))
 #                return (4, 403, "User does not have privilege to update account data", "", errhdrs)
 #
@@ -916,27 +914,27 @@ class RfEventService():
 #            currentEtag='"' + self.calculateAccountEtag(accountid) + '"'
 #            # verify they match
 #            if requestEtag  != currentEtag:
-#                self.rfr.logMsg("WARNING","412 If-Match Condition Failed-Patch Account")
+#                self.rdr.logMsg("WARNING","412 If-Match Condition Failed-Patch Account")
 #                return (4, 412, "If-Match Condition Failed", "", errhdrs)
 #
 #        # if Password was in patchData, verify value is good 
 #        if "Password" in patchData:
 #            password=patchData["Password"]
-#            # check if password length is less than value set in accountService MinPasswordLength
-#            if "MinPasswordLength" in self.accountServiceDb:
-#                if len(password) < self.accountServiceDb["MinPasswordLength"]:
-#                    self.rfr.logMsg("WARNING","400 Bad Request-Patch Account: Password length less than min")
+#            # check if password length is less than value set in eventService MinPasswordLength
+#            if "MinPasswordLength" in self.eventServiceDb:
+#                if len(password) < self.eventServiceDb["MinPasswordLength"]:
+#                    self.rdr.logMsg("WARNING","400 Bad Request-Patch Account: Password length less than min")
 #                    return (4, 400, "Bad Request-Password length less than min", "", errhdrs)
-#            if "MaxPasswordLength" in self.accountServiceDb:
-#                if len(password) > self.accountServiceDb["MaxPasswordLength"]:
-#                    self.rfr.logMsg("WARNING","400 Bad Request-Patch Account: Password length exceeds max")
+#            if "MaxPasswordLength" in self.eventServiceDb:
+#                if len(password) > self.eventServiceDb["MaxPasswordLength"]:
+#                    self.rdr.logMsg("WARNING","400 Bad Request-Patch Account: Password length exceeds max")
 #                    return (4, 400, "Bad Request-Password length exceeds max", "", errhdrs)
 #
 #            # check if password meets regex requirements---no whitespace or ":"
 #            passwordMatchPattern="^[^\s:]+$"
 #            passwordMatch = re.search(passwordMatchPattern, password)
 #            if not passwordMatch:
-#                self.rfr.logMsg("WARNING","400 Bad Request-Patch Account: invalid password: whitespace or : is not allowed")
+#                self.rdr.logMsg("WARNING","400 Bad Request-Patch Account: invalid password: whitespace or : is not allowed")
 #                return (4, 400, "Bad Request-invalid password-whitespace or : is not allowed", "", errhdrs)
 #
 #            # generate the password hash
@@ -957,19 +955,19 @@ class RfEventService():
 #                    break
 #
 #            if foundRoleId is not True:
-#                self.rfr.logMsg("WARNING","400 Bad Request-Patch Account: roleId does not exist")
+#                self.rdr.logMsg("WARNING","400 Bad Request-Patch Account: roleId does not exist")
 #                return (4, 400, "Bad Request-roleId does not exist", "", errhdrs)
 #
 #        # check if Enabled is a boul
 #        if "Enabled" in patchData: 
 #            if (patchData["Enabled"] is not True) and (patchData["Enabled"] is not False):
-#                self.rfr.logMsg("WARNING","400 Bad Request-Patch Account: Enabled must be either True or False")
+#                self.rdr.logMsg("WARNING","400 Bad Request-Patch Account: Enabled must be either True or False")
 #                return (4, 400, "Bad Request-Enabled must be either True or False", "", errhdrs)
 #
 #        # check if Locked is a legal value.   a user can only set locked to False, not true
 #        if "Locked" in patchData: 
 #            if patchData["Locked"] is not False:
-#                self.rfr.logMsg("WARNING",
+#                self.rdr.logMsg("WARNING",
 #                     "400 Bad Request-Patch Account: Locked can only be set to False by user")
 #                return (4, 400, "Bad Request-Locked can only be set to False by user", "", errhdrs)
 #
@@ -981,7 +979,7 @@ class RfEventService():
 #                if ch in string.whitespace:
 #                    badName=True
 #            if badName is True:
-#                self.rfr.logMsg("WARNING",
+#                self.rdr.logMsg("WARNING",
 #                     "400 Bad Request-Patch Account: UserName cannot contait : or whitespace")
 #                return (4, 400, "Bad Request-UserName cannot contain : or whitespace", "", errhdrs)
 #
@@ -992,20 +990,20 @@ class RfEventService():
 #                # save new value to the volatile accountsDict
 #                self.accountsDict[accountid][prop]=patchData[prop]
 #            else:
-#                # save new value to the non-vol accountsDb and update the Db cache file
+#                # save new value to the non-vol eventDestinationCollectionDb and update the Db cache file
 #                updateDb=True
 #                # if updating the password, save hash instead of cleartext passwd
 #                if (prop == "Password"):
-#                    self.accountsDb[accountid][prop]=passwdHash
+#                    self.eventDestinationCollectionDb[accountid][prop]=passwdHash
 #                else:
-#                    self.accountsDb[accountid][prop]=patchData[prop]
+#                    self.eventDestinationCollectionDb[accountid][prop]=patchData[prop]
 #
-#        # write the data back out to the accountService database file
+#        # write the data back out to the eventService database file
 #        if updateDb is True:
-#            accountsDbJson=json.dumps(self.accountsDb,indent=4)
+#            eventDestinationCollectionDbJson=json.dumps(self.eventDestinationCollectionDb,indent=4)
 #            filename="AccountsDb.json"
-#            with open( self.accountsDbFilePath, 'w', encoding='utf-8') as f:
-#                f.write(accountsDbJson)
+#            with open( self.eventDestinationCollectionDbFilePath, 'w', encoding='utf-8') as f:
+#                f.write(eventDestinationCollectionDbJson)
 #
 #        return(0, 204, "No Content","", errhdrs)
 #
@@ -1015,12 +1013,12 @@ class RfEventService():
 #        #   the specific Allow header list is a function of the accountid
 #        #   some accounts are not deletable
 #
-#        if accountid not in self.accountsDb:
+#        if accountid not in self.eventDestinationCollectionDb:
 #            # generate error header for 4xx errors
 #            errhdrs=self.hdrs.rfRespHeaders(request)
 #            return(4, 404, "Not Found","",errhdrs)
 #
-#        if self.accountsDb[accountid]["Deletable"] is False:
+#        if self.eventDestinationCollectionDb[accountid]["Deletable"] is False:
 #            allowMethods="GetPatch"
 #        else:
 #            allowMethods=["HEAD","GET","PATCH","DELETE"],
