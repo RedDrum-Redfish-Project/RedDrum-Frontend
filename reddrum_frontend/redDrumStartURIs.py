@@ -317,7 +317,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    +#TODO look for subscriptionId
+     #TODO look for subscriptionId
      # Get Role
      # GET /redfish/v1/AccountService/Role/<roleId>  -- get role entry
      #    -auth, json
