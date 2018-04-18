@@ -137,42 +137,39 @@ class RfEventService():
             self.eventDestinationCollectionDict[eventDestination]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
         
             
-#    # GET AccountService
-#    def getAccountServiceResource(self,request):
-#        # generate headers
-#        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.eventServiceTemplate, allow="GetPatch")
-#
-#        # Process HEAD method
-#        if request.method=="HEAD":
-#            return(0,200,"","",hdrs)
-#
-#        # create a copy of the AccountService resource template 
-#        resData2=dict(self.eventServiceTemplate)
-#
-#        # add required properties
-#        resData2["@odata.id"] = "/redfish/v1/AccountService"
-#        resData2["Id"] = "AccountService"
-#        resData2["Name"] = "Account Service"
-#        resData2["Description"] = "RackManager User Account Service"
-#
-#        # add links to Accounts and Roles collections
-#        resData2["Accounts"] = { "@odata.id": "/redfish/v1/AccountService/Accounts" }
-#        resData2["Roles"] = { "@odata.id": "/redfish/v1/AccountService/Roles" }
-#
-#        # set the dynamic data in the template copy to the value in the eventService database
-#        resData2["AuthFailureLoggingThreshold"]=self.eventServiceDb["AuthFailureLoggingThreshold"]
-#        resData2["MinPasswordLength"]=self.eventServiceDb["MinPasswordLength"]
-#        resData2["AccountLockoutThreshold"]=self.eventServiceDb["AccountLockoutThreshold"]
-#        resData2["AccountLockoutDuration"]=self.eventServiceDb["AccountLockoutDuration"]
-#        resData2["AccountLockoutCounterResetAfter"]=self.eventServiceDb["AccountLockoutCounterResetAfter"]
-#        if "MaxPasswordLength" in self.eventServiceDb:  # early RedDrum did not support MaxPasswordLength
-#            resData2["MaxPasswordLength"] = self.eventServiceDb["MaxPasswordLength"]
-#        if "ServiceEnabled" in self.eventServiceDb:  # early RedDrum did not support ServiceEnabled
-#            resData2["ServiceEnabled"]= self.eventServiceDb["ServiceEnabled"]
-#
-#        # create the response json data and return
-#        resp=json.dumps(resData2,indent=4)
-#        return(0, 200, "", resp, hdrs)
+    # GET EventService
+    def getEventServiceResource(self,request):
+        # generate headers
+        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.eventServiceTemplate, allow="GetPatch")
+
+        # Process HEAD method
+        if request.method=="HEAD":
+            return(0,200,"","",hdrs)
+
+        # create a copy of the EventService resource template 
+        resData2=dict(self.eventServiceTemplate)
+
+        # add required properties
+        resData2["@odata.id"] = "/redfish/v1/EventService"
+        resData2["Id"] = "EventService"
+        resData2["Name"] = "Event Service"
+        resData2["Status"]["State"]  = "Enabled"
+        resData2["Status"]["Health"]  = "OK"
+        resData2["ServiceEnabled"]  = "true"
+
+        # Retry
+        resData2["DeliveryRetryAttempts"]  = "3"
+        resData2["DeliveryRetryIntervalSeconds"]  = "60"
+
+        # Event Types
+        resData2["EventTypesForSubscription"]  = ["StatusChange", "ResourceAdded", "ResourceUpdated", "ResourceRemoved", "Alert"]
+            
+        # Subscriptions
+        resData2["EventDestinationCollection"] = { "@odata.id": "/redfish/v1/EventService/EventDestinationCollection" }
+
+        # create the response json data and return
+        resp=json.dumps(resData2,indent=4)
+        return(0, 200, "", resp, hdrs)
 #
 #    # PATCH AccountService
 #    def patchAccountServiceResource(self, request, patchData):
