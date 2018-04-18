@@ -274,6 +274,44 @@ def rdStart_RedDrum_Flask_app(rdr):
         return(resp,statusCode,hdrs)
 
 
+    # -----------------------------------------------------------------------
+    #  EventService URIs
+
+    # Get EventService
+    # GET /redfish/v1/EventService   --get account service
+    #    -auth, json
+    @app.route("/redfish/v1/EventService", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetEventService():
+        rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getEventServiceResource(request)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # ------------------------------------------------------------
+    # Event Service/ EventDestinationCollection APIs
+
+    # Get EventDestinationCollection
+    # GET /redfish/v1/EventService/EventDestinationCollection -- get EventDestination collection
+    #    -auth, json
+    @app.route("/redfish/v1/EventService/EventDestinationCollection", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetEventDestinationCollection():
+        rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getEventDestinationCollectionCollectionResource(request)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # Get EventDestinationCollection
+    # GET /redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>  -- get EventDestination entry
+    #    -auth, json
+    @app.route("/redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetEventDestinationCollectionId(eventDestinationId):
+        rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getEventDestinationCollectionEntry(request, eventDestinationId)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
 
     # -----------------------------------------------------------------------
     #  AccountService URIs
