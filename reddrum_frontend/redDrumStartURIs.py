@@ -289,27 +289,27 @@ def rdStart_RedDrum_Flask_app(rdr):
         return(resp,statusCode,hdrs)
 
     # ------------------------------------------------------------
-    # Event Service/ EventDestinationCollection APIs
+    # Event Service/ EventSubscriptionCollection APIs
 
-    # Get EventDestinationCollection
-    # GET /redfish/v1/EventService/EventDestinationCollection -- get EventDestination collection
+    # Get EventSubscriptionCollection
+    # GET /redfish/v1/EventService/EventSubscriptionCollection -- get EventSubscription collection
     #    -auth, json
-    @app.route("/redfish/v1/EventService/EventDestinationCollection", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetEventDestinationCollection():
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventDestinationCollectionCollectionResource(request)
+    def rfGetEventSubscriptionCollection():
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionCollectionResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # Get EventDestinationCollection
-    # GET /redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>  -- get EventDestination entry
+    # Get EventSubscription Entry
+    # GET /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>  -- get EventSubscription entry
     #    -auth, json
-    @app.route("/redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetEventDestinationCollectionId(eventDestinationId):
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventDestinationCollectionEntry(request, eventDestinationId)
+    def rfGetEventSubscriptionCollectionEntry(eventSubscriptionId):
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionCollectionEntry(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -326,46 +326,46 @@ def rdStart_RedDrum_Flask_app(rdr):
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # POST, PUT  eventDestinationId-- return 405 and proper allow header for POST an PUT of a eventDestinationId
-    # POST /redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>
-    # PUT  /redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>
-    @app.route("/redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>", methods=['POST','PUT'])
-    def rfPostPutEventDestinationEntry405handler(eventDestinationId):     
+    # POST, PUT  eventSubscriptionId-- return 405 and proper allow header for POST an PUT of a eventSubscriptionId
+    # POST /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>
+    # PUT  /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['POST','PUT'])
+    def rfPostPutEventSubscriptionEntry405handler(eventSubscriptionId):     
         #rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventDestinationEntry(request, eventDestinationId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventSubscriptionEntry(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # Delete EventDestination -- delete an eventDestination
-    # DELETE /redfish/v1/EventService/EventDestinationCollection/<eventDestinationId> 
+    # Delete EventSubscription -- delete an eventSubscription
+    # DELETE /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId> 
     #   -auth,  
-    @app.route("/redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>", methods=['DELETE'])
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['DELETE'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
-    def rfDeleteEventDestination(eventDestinationId):
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteEventDestination(request, eventDestinationId)
+    def rfDeleteEventSubscription(eventSubscriptionId):
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteEventSubscription(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # Patch EventDestination  -- update a EventDestination entry -- patch 
-    # PATCH /redfish/v1/EventService/EventDestinations/<eventDestinationId>
-    #    -auth, write to a property in the EventDestination
-    @app.route("/redfish/v1/EventService/EventDestinationCollection/<eventDestinationId>", methods=['PATCH'])
+    # Patch EventSubscription  -- update a EventSubscription entry -- patch 
+    # PATCH /redfish/v1/EventService/EventSubscriptions/<eventSubscriptionId>
+    #    -auth, write to a property in the EventSubscription
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['PATCH'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
-    def rfPatchEventDestinationEntry(eventDestinationId):     
+    def rfPatchEventSubscriptionEntry(eventSubscriptionId):     
         rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventDestinationEntry(request, eventDestinationId, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventSubscriptionEntry(request, eventSubscriptionId, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
     # POST, PUT  test event
-    # POST /redfish/v1/EventService/EventDestinationCollection/<testEvent>
-    # PUT  /redfish/v1/EventService/EventDestinationCollection/<testEvent>
-    @app.route("/redfish/v1/EventService/EventDestinationCollection/<testEventId>", methods=['POST','PUT'])
-    def rfPostPutEventDestinationEntry405handler(eventDestinationId):     
+    # POST /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
+    # PUT  /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
+    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<testEventId>", methods=['POST','PUT'])
+    def rfPostPutEventSubscriptionEntry405handler(eventSubscriptionId):     
         #rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventDestinationEntry(request, eventDestinationId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventSubscriptionEntry(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
