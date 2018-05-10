@@ -9,7 +9,6 @@ import sys
 import datetime
 import copy
 from  .redfish_headers import RfAddHeaders
-from  .oemUtils import Dell_Dss9000_OemUtils
 
 
 class RfChassisResource():       
@@ -17,7 +16,7 @@ class RfChassisResource():
     # Note that this resource was created in serviceRoot for the Chassis Resource.
     def __init__(self,rfr ):
         self.rfr=rfr
-        self.dellG5OemUtils=Dell_Dss9000_OemUtils()
+        #xggx self.dellG5OemUtils=Dell_Dss9000_OemUtils(rfr)
         self.chassisDbDiscovered=None
         self.loadResourceTemplates(rfr )
         self.loadChassisDbFiles(rfr)
@@ -334,7 +333,7 @@ class RfChassisResource():
         # build Intel Rackscale OEM Section 
         if "hasOemRackScaleLocation" in self.chassisDb[chassisid]:
             if self.chassisDb[chassisid]["hasOemRackScaleLocation"] is True:
-                locationId, parentId = self.rfr.dellG5OemUtils.rsdLocation(chassisid)
+                locationId, parentId = self.rfr.backend.oemUtils.rsdLocation(chassisid)
                 oemData = {"@odata.type": "#Intel.Oem.Chassis",
                            "Location": { "Id": locationId } }
                 if parentId is not None:
@@ -937,12 +936,12 @@ class RfChassisResource():
                         relatedItemMembers.append(relatedItemMember)
                     if "G5Blocks" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.dellG5OemUtils.isBlock(chas) is True:
+                            if self.rfr.backend.oemUtils.isBlock(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                     if "G5PowerBays" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.dellG5OemUtils.isPowerBay(chas) is True:
+                            if self.rfr.backend.oemUtils.isPowerBay(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                         
