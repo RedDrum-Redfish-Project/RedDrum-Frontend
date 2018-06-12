@@ -302,6 +302,13 @@ def rdStart_RedDrum_Flask_app(rdr):
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
+#GETS for EventService will have privilege "Login"
+#dmtf github redfisht tree registeries
+#PrivilegeRegisteries
+#Entity is EventService
+#oPATCH is Prvilige ConfigureManager
+#Review privilges in the spec
+#Look at SessionService for headers
     # Get EventSubscription Entry
     # GET /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>  -- get EventSubscription entry
     #    -auth, json
@@ -312,6 +319,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionCollectionEntry(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
+
 
     # Patch EventService
     # PATCH /redfish/v1/EventService   --patch event service
@@ -363,9 +371,9 @@ def rdStart_RedDrum_Flask_app(rdr):
     # POST /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
     # PUT  /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
     @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<testEventId>", methods=['POST','PUT'])
-    def rfPostPutEventSubscriptionEntry405handler(eventSubscriptionId):     
+    def rfPostPutEventTestEntry405handler(eventSubscriptionId):     
         #rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventSubscriptionEntry(request, eventSubscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventTestEntry(request, eventSubscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 

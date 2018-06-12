@@ -249,6 +249,9 @@ class RfServiceRoot():
             # then clear db caches for users, roles, and AccountsService
             self.accountService.clearAccountServiceDatabaseFiles(self,rdr)
 
+            # then clear db caches for users, roles, and AccountsService
+            self.eventService.clearEventServiceDatabaseFiles(self,rdr)
+
             return(0,204,"","")
         else:
             rdr.logMsg("ERROR", "clearAccountsCaches got bad input. ClearOn: {}".format(clearOn)) 
