@@ -2,5 +2,9 @@
     "Id": "EventService",
     "ServiceEnabled": true,
     "DeliveryRetryAttempts": 3,
-    "DeliveryRetryIntervalSeconds": 30
+    "DeliveryRetryIntervalSeconds": 30,
+    "Status" : {
+        "Health" : "OK",
+        "State" : "Enabled"
+    }
 }

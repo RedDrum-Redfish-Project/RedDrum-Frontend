@@ -1,0 +1,10 @@
+{
+"Id": "EventService",
+"Name": "EventService",
+"Destination": "",
+    "EventTypes": [
+        "Alert"
+    ],
+"Context": "",
+"Protocol": "Redfish"
+}

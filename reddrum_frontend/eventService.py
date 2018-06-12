@@ -20,7 +20,7 @@ class RfEventService():
         self.rdr=rdr
         self.loadResourceTemplates(rdr )
         self.loadEventServiceDatabaseFiles(rdr )
-        self.initializeEventDestinationCollectionDict(rdr)
+        self.initializeSubscriptionsDict(rdr)
 
         self.hdrs=RfAddHeaders(rdr)
 
@@ -29,7 +29,7 @@ class RfEventService():
         self.eventServiceTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventService.json")
 
         #load Accounts Collection Template
-        self.eventDestinationCollectionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestinationCollection.json")
+        self.subscriptionsTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestinationCollection.json")
 
         #load Account Entry Template
         #self.accountEntryTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "ManagerAccount.json")
@@ -38,7 +38,7 @@ class RfEventService():
         #self.rolesCollectionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "RoleCollection.json")
 
         #load Roles Entry Template
-        self.EventDestinationTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestination.json")
+        self.EventSubscriptionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestination.json")
 
     # worker function called by loadResourceTemplates() to load a specific template
     # returns a dict loaded of the template file, which calling function saves to a variable
@@ -61,10 +61,10 @@ class RfEventService():
 
         # load the Events collection database file: "EventsDb.json"
         filename="EventDestinationCollectionDb.json"
-        self.eventDestinationCollectionDbFilePath,self.eventDestinationCollectionDb=self.loadDatabaseFile(rdr,"db",filename) 
+        self.subscriptionsDbFilePath,self.subscriptionsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
         # load the Roles collection  database file:     "RolesDb.json"
-        filename="EventDestination.json"
+        filename="EventDestinationDb.json"
         self.rolesDbFilePath,self.rolesDb=self.loadDatabaseFile(rdr,"db",filename) 
 
     # worker function called by loadEventServiceDatabaseFiles() to load a specific database file
@@ -102,10 +102,10 @@ class RfEventService():
 
         # clear the Accounts collection database file: "AccountsDb.json"
         filename="EventDestinationCollectionDb.json"
-        self.eventDestinationCollectionDb=self.clearDatabaseFile(rdr,"db",filename) 
+        self.subscriptionsDb=self.clearDatabaseFile(rdr,"db",filename) 
 
         # clear the Roles collection  database file:     "RolesDb.json"
-        filename="EventDestination.json"
+        filename="EventDestinationDb.json"
         self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
 
 #TODO look at how chassis does the clear and follow
@@ -122,19 +122,19 @@ class RfEventService():
         return(clearedDb)
 
 #TODO add properties for Subscription retry
-    def initializeEventDestinationCollectionDict(self,rdr):
+    def initializeSubscriptionsDict(self,rdr):
         # this is the in-memory database of eventDestination properties that are not persistent
         # the eventDestinationCollectionDict is a dict indexed by   eventDestinationCollectionDict[accountid][<nonPersistentAccountParameters>]
         #   self.eventDestinationCollectionDict[eventdestinationid]=
         #       { "Locked": <locked>,  "FailedLoginCount": <failedLoginCnt>, "LockedTime": <lockedTimestamp>,
         #         "AuthFailTime": <authFailTimestamp> }
-        self.eventDestinationCollectionDict=dict() #create an empty dict of EventDestination entries
+        self.subscriptionsDict=dict() #create an empty dict of EventDestination entries
         curTime=time.time()
 
         #create the initial state of the eventDestinationCollectionDict from the eventDestinationCollectionDb
         #for subscription in eventSubscriptionDb:
-        for eventDestination in self.eventDestinationCollectionDb:
-            self.eventDestinationCollectionDict[eventDestination]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
+        for eventSubscription in self.subscriptionsDb:
+            self.subscriptionsDict[eventSubscription]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
         
             
     # GET EventService
@@ -153,23 +153,40 @@ class RfEventService():
         resData2["@odata.id"] = "/redfish/v1/EventService"
         resData2["Id"] = "EventService"
         resData2["Name"] = "Event Service"
-        resData2["Status"]["State"]  = "Enabled"
-        resData2["Status"]["Health"]  = "OK"
         resData2["ServiceEnabled"]  = "true"
 
+        # Health
+        #TODO change static entries to read from DB
+
+        resData2["Status"]  = dict()
+        resData2["Status"]["Health"] = self.eventServiceDb["Status"]["Health"] #e.g. "OK"
+        resData2["Status"]["State"] = self.eventServiceDb["Status"]["State"] #e.g. "Enabled"
+
         # Retry
-        resData2["DeliveryRetryAttempts"]  = "3"
-        resData2["DeliveryRetryIntervalSeconds"]  = "60"
+        resData2["DeliveryRetryAttempts"] = self.eventServiceDb["DeliveryRetryAttempts"] #e.g. "3"
+        resData2["DeliveryRetryIntervalSeconds"] = self.eventServiceDb["DeliveryRetryAttempts"] #e.g. "60"
 
         # Event Types
         resData2["EventTypesForSubscription"]  = ["StatusChange", "ResourceAdded", "ResourceUpdated", "ResourceRemoved", "Alert"]
             
         # Subscriptions
-        resData2["EventDestinationCollection"] = { "@odata.id": "/redfish/v1/EventService/EventDestinationCollection" }
+        resData2["Subscriptions"] = { "@odata.id": "/redfish/v1/EventService/Subscriptions" }
 
         # create the response json data and return
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
+
+### Generate each subscription with ids example for POST ###
+#SessionService/postSessionResource
+#rfGenerateId generateId do not use S or A
+
+### for PATCH/POST/ETC ###
+# check mockups on dmtf to see things like how numbers are generated for subscription ID
+# check xml schemas on dmtf github for sanity checking of required values (RequiredOnCreate)
+# Do we reject if uneeded data?  Probably not
+# check values are sane, regexp, integers versus strings, etc
+### for PATCH/POST/ETC ###
+
 #
 #    # PATCH AccountService
 #    def patchAccountServiceResource(self, request, patchData):
@@ -789,6 +806,7 @@ class RfEventService():
 #            #something went wrong--return 500
 #            return(5, 500, "Error Getting New Account Data","",{})
 #
+### Not required
 #        # calculate eTag
 #        etagValue=self.calculateAccountEtag(accountid)
 #
