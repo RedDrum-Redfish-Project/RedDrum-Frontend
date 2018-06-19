@@ -642,7 +642,8 @@ class RfManagersResource():
 
         # setup some variables to build response from
         basePath="/redfish/v1/Managers/"
-        networkProtocolProperties=["Name","HTTP","HTTPS","SSH", "NTP","HostName","FQDN","Telnet","Status"]
+        networkProtocolProperties=["Name","HTTP","HTTPS","SSH", "NTP","HostName","FQDN","Telnet","Status"
+                                   "VirtualMedia","SSDP","IPMI","KVMIP" ]
 
         # assign the required properties
         responseData2["@odata.id"] = basePath + mgrid + "/NetworkProtocol"
@@ -730,7 +731,7 @@ class RfManagersResource():
 
     # GET Manager Ethernet Interface Entry
     def getManagerEthernetInterfaceEntry(self, request, mgrid, ethid):
-        # verify that the systemid and procId is valid
+        # verify that the systemid and procId is valid:
         if mgrid not in self.managersDb:
             notFound=True
         elif "BaseNavigationProperties"  not in  self.managersDb[mgrid]:
@@ -767,8 +768,11 @@ class RfManagersResource():
         if request.method=="HEAD":
             return(0,200,"","",respHdrs)
 
-        mgrEthernetProperties=["Name","InterfaceEnabled","FQDN","FullDuplex", "AutoNeg", "SpeedMbps", 
-                               "MACAddress", "PermanentMACAddress", "HostName", "MTUSize" ]
+        mgrEthernetProperties=["Name", "UefiDevicePath", "Status", "InterfaceEnabled", "PermanentMACAddress",
+                "MACAddress", "SpeedMbps", "AutoNeg", "FullDuplex", "MTUSize", "HostName", "FQDN",
+                "MaxIPv6StaticAddresses", "VLAN", "IPv4Addresses", "IPv6Addresses", "IPv6StaticAddresses",
+                "IPv6AddressPolicyTable","IPv6DefaultGateway","NameServers", "VLANs"]
+
         mgrIpv4SubProperties=["Gateway","AddressOrigin", "SubnetMask", "Address"]
 
         # xg99 add IPV6 properties
