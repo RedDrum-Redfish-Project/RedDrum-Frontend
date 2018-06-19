@@ -1166,7 +1166,11 @@ class RfSystemsResource():
         if request.method=="HEAD":
             return(0,200,"","",respHdrs)
 
-        ethStringProperties=["Name", "MACAddress", "PermanentMACAddress" ]
+        #ethStringProperties=["Name", "MACAddress", "PermanentMACAddress" ]
+        ethStringProperties=["Name", "UefiDevicePath", "Status", "InterfaceEnabled", "PermanentMACAddress", 
+                "MACAddress", "SpeedMbps", "AutoNeg", "FullDuplex", "MTUSize", "HostName", "FQDN", 
+                "MaxIPv6StaticAddresses", "VLAN", "IPv4Addresses", "IPv6Addresses", "IPv6StaticAddresses", 
+                "IPv6AddressPolicyTable","IPv6DefaultGateway","NameServers", "VLANs"]
 
         # copy the template resource and update odata.id since it is a funct of sysid
         responseData2=dict(self.ethernetInterfaceEntryTemplate)
