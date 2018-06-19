@@ -661,8 +661,6 @@ class RfManagersResource():
             for prop in networkProtocolProperties:
                 if prop in self.managersDb[mgrid]["NetworkProtocols"]:
                     responseData2[prop] = self.managersDb[mgrid]["NetworkProtocols"][prop]
-        print("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-        print("dump db:  {}".format(self.managersDb[mgrid]))
 
         # convert to json
         jsonRespData2=(json.dumps(responseData2,indent=4))
@@ -769,9 +767,6 @@ class RfManagersResource():
                                      resource=self.managerEthernetInterfaceTemplate)
         if request.method=="HEAD":
             return(0,200,"","",respHdrs)
-
-        mgrEthernetProperties=["Name","InterfaceEnabled","FQDN","FullDuplex", "AutoNeg", "SpeedMbps", 
-                               "MACAddress", "PermanentMACAddress", "HostName", "MTUSize" ]
 
         mgrEthernetProperties=["Name", "UefiDevicePath", "Status", "InterfaceEnabled", "PermanentMACAddress",
                 "MACAddress", "SpeedMbps", "AutoNeg", "FullDuplex", "MTUSize", "HostName", "FQDN",
