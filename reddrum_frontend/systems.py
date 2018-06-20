@@ -651,13 +651,14 @@ class RfSystemsResource():
 
         if( rc==0):
             return(0, 204, "SUCCESS", "", hdrs)
+        elif( rc == 400):
+            return(4,400,"invalid resetType","", hdrs)
         else:
             return(rc,500, "ERROR executing backend doSystemReset. rc={}".format(rc),"", hdrs)
 
         # DONE
 
 
-    # xg9988
     # GET System Processor Collection
     def getSystemProcessorCollection(self, request, sysid):
         # verify that the systemid and procId is valid

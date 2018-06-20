@@ -607,7 +607,7 @@ class RfManagersResource():
         if( rc==0):
             return(0, 204, "", "", hdrs)
         else:
-            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rd))
+            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rc))
             return(rc,500, "ERROR executing backend reset","",hdrs)
 
         # DONE

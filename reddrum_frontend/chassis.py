@@ -1182,6 +1182,8 @@ class RfChassisResource():
         rc=self.rfr.backend.chassis.doChassisReset(chassisid,resetType)
         if( rc==0):
             return(0, 204, "SUCCESS", "", hdrs)
+        elif( rc == 400):
+            return(4,400,"invalid resetType","", hdrs)
         else:
             return(rc,500, "ERROR executing doChassisReset in backend. rc={}".format(rc), "", hdrs)
 
