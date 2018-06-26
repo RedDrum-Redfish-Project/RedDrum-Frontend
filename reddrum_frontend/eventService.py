@@ -11,7 +11,16 @@ import re
 import string
 #from .rootData import RfRoot
 from .redfish_headers import RfAddHeaders
+from enum import Enum
 
+# TODO shouldn't this be moved to the "Event" class???
+class EventType(Enum):
+    status = "StatusChange"
+    resourceUpdated = "ResourceUpdated"
+    resourceAdded = "ResourceAdded"
+    resourceRemoved= "ResourceRemoved"
+    alert = "Alert"
+    
 
 class RfEventService():  
     # Note that this resource was created in serviceRoot for the Account service.
@@ -164,7 +173,7 @@ class RfEventService():
 
         # Retry
         resData2["DeliveryRetryAttempts"] = self.eventServiceDb["DeliveryRetryAttempts"] #e.g. "3"
-        resData2["DeliveryRetryIntervalSeconds"] = self.eventServiceDb["DeliveryRetryAttempts"] #e.g. "60"
+        resData2["DeliveryRetryIntervalSeconds"] = self.eventServiceDb["DeliveryRetryIntervalSeconds"] #e.g. "60"
 
         # Event Types
         resData2["EventTypesForSubscription"]  = ["StatusChange", "ResourceAdded", "ResourceUpdated", "ResourceRemoved", "Alert"]
@@ -187,48 +196,135 @@ class RfEventService():
 # check values are sane, regexp, integers versus strings, etc
 ### for PATCH/POST/ETC ###
 
-#
-#    # PATCH AccountService
-#    def patchAccountServiceResource(self, request, patchData):
-#        # generate headers
-#        hdrs = self.hdrs.rfRespHeaders(request)
-#
-#        #first verify client didn't send us a property we cant patch
-#        patachables=("AccountLockoutThreshold", "AuthFailureLoggingThreshold",
-#                     "AccountLockoutDuration","AccountLockoutCounterResetAfter")
-#        for key in patchData:
-#            if( not key in patachables ):
-#                return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
-#
-#        # then convert the patch properties passed-in to integers
-#        for key in patchData:
-#            newVal=patchData[key]
-#            try:
-#                numVal=round(newVal)
-#            except ValueError:
-#                return(4,400,"invalid value","",hdrs)
-#            else:
-#                patchData[key]=numVal
-#
-#        # then verify the properties passed-in are in valid ranges
-#        newDuration=self.eventServiceDb["AccountLockoutDuration"]
-#        newResetAfter=self.eventServiceDb["AccountLockoutCounterResetAfter"]
-#        if( "AccountLockoutDuration" in patchData ):
-#            newDuration=patchData["AccountLockoutDuration"]
-#        if( "AccountLockoutCounterResetAfter" in patchData ):
-#            newResetAfter=patchData["AccountLockoutCounterResetAfter"]
-#        if( newDuration < newResetAfter ):
-#            return(4,400,"Bad Request-Invalid value","",hdrs)
-#
-#        # if here, all values are good. Update the eventServiceDb dict
-#        for key in patchData:
-#            self.eventServiceDb[key]=patchData[key]
-#
-#        # write the data back out to the eventService database file
-#        eventServiceDbJson=json.dumps(self.eventServiceDb,indent=4)
-#        with open( self.eventServiceDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(eventServiceDbJson)
-#        return(0, 204, "", "", hdrs)
+    # POST Events
+    # POST to Events collection  (add user)
+    def postEventsResource(self,request, postData):
+        # generate headers for 4xx error messages
+        errhdrs = self.hdrs.rfRespHeaders(request )
+
+        # First check that all required on create properties were sent as post data
+        if( (postData['EventDestination'] is None) or (postData['EventTypes'] is None) or (postData['Protocol'] is None ) ):
+            return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
+
+        context=None
+        protocol=None
+        eventDestination=None
+        eventTypes=None
+
+        if("Context" in postData):
+            context=postData['Context']
+
+        if("Protocol" in postData):
+            protocol=postData['Protocol']
+
+        if("EventDestination" in postData):
+            eventDestination=postData['EventDestination']
+
+        if("EventTypes" in postData):
+            eventTypes=postData['EventTypes']
+
+
+        # Next verify that the client didn't send us a property we cant write when creating the event
+        # we need to fail the request if we cant handle any properties sent
+        postable=("Context","Protocol","EventDestination","EventTypes")
+        for prop in postData:
+            if not prop in postables:
+                return (4, 400, "Bad Request-Invalid Post Property Sent", "",errhdrs)
+
+        ##########################################
+        # now verify that the Post data is valid #
+        ##########################################
+
+        # 'Redfish' is the only protocol supported
+        if (protocol != 'Redfish'):
+            return (4, 400, "Bad Request-Only the 'Redfish' protocol is supported", "",errhdrs)
+
+        # eventDestination must be of the form (URL/URI) http:// 
+
+        # eventTypes must exist in the collection Event.EventType enum
+        for event in eventTypes:
+            if not event in EventType.__members__:
+                return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
+
+        # TODO Context ???
+
+        # create response header data
+        eventid=username
+        locationUri="/redfish/v1/EventService/Events/" + eventid
+
+        # add the new event entry to the eventDestinationCollectionDb
+        self.eventDestinationCollectionDb[eventid]={"UserName": username, "Password": password, 
+                  "RoleId": roleId, "Enabled": enabled, "Deletable": True}
+
+        # add the new event entry to the eventsDict
+        dfltEventDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
+        self.eventsDict[eventid]=dfltEventDictEntry
+
+        # write the EventDb back out to the file
+        dbFilePath=os.path.join(self.rdr.varDataPath,"db", "EventsDb.json")
+        dbDictJson=json.dumps(self.eventDestinationCollectionDb, indent=4)
+        with open( dbFilePath, 'w', encoding='utf-8') as f:
+            f.write(dbDictJson)
+        
+        # get the response data
+        rc,status,msg,respData,respHdr=self.getEventEntry(request, eventid)
+        if( rc != 0):
+            #something went wrong--return 500
+            return(5, 500, "Error Getting New Event Data","",{})
+
+     ## Not required
+        # calculate eTag
+        etagValue=self.calculateEventEtag(eventid)
+
+        # get the response Header with Link, and Location
+        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri,
+                                     resource=self.eventEntryTemplate, strongEtag=etagValue)
+
+        #return to flask uri handler
+        return(0, 201, "Created",respData,respHeaderData)
+
+
+    # PATCH EventService
+    def patchEventServiceResource(self, request, patchData):
+        # generate headers
+        hdrs = self.hdrs.rfRespHeaders(request)
+
+        #first verify client didn't send us a property we cant patch
+        patachables=("EventLockoutThreshold", "AuthFailureLoggingThreshold",
+                     "EventLockoutDuration","EventLockoutCounterResetAfter")
+        for key in patchData:
+            if( not key in patachables ):
+                return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
+
+        # then convert the patch properties passed-in to integers
+        for key in patchData:
+            newVal=patchData[key]
+            try:
+                numVal=round(newVal)
+            except ValueError:
+                return(4,400,"invalid value","",hdrs)
+            else:
+                patchData[key]=numVal
+
+        # then verify the properties passed-in are in valid ranges
+        newDuration=self.eventServiceDb["EventLockoutDuration"]
+        newResetAfter=self.eventServiceDb["EventLockoutCounterResetAfter"]
+        if( "EventLockoutDuration" in patchData ):
+            newDuration=patchData["EventLockoutDuration"]
+        if( "EventLockoutCounterResetAfter" in patchData ):
+            newResetAfter=patchData["EventLockoutCounterResetAfter"]
+        if( newDuration < newResetAfter ):
+            return(4,400,"Bad Request-Invalid value","",hdrs)
+
+        # if here, all values are good. Update the eventServiceDb dict
+        for key in patchData:
+            self.eventServiceDb[key]=patchData[key]
+
+        # write the data back out to the eventService database file
+        eventServiceDbJson=json.dumps(self.eventServiceDb,indent=4)
+        with open( self.eventServiceDbFilePath, 'w', encoding='utf-8') as f:
+            f.write(eventServiceDbJson)
+        return(0, 204, "", "", hdrs)
 #
 #    # getAccountAuthInfo(username,password)
 #    #   returns: rc, errMsgString, accountId, roleId, userPrivileges
@@ -237,339 +333,9 @@ class RfEventService():
 #    #        =0   if authenticated
 #    #   self.accountsDict[accountid]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
 #
-#    def getAccountAuthInfo(self, username, password ):
-#        authFailed=False
-#        storedUsername=None
-#        storedPassword=None
-#        storedPrivileges=None
-#        # if username or password is not None, it is an error
-#        if username is None:
-#            return(500, "Invalid Auth Check for username",None,None,None)
-#        if password is None:
-#            return(500, "Invalid Auth Check for password",None,None,None)
-#
-#        # from username, lookup accountId --- they are not necessarily the same
-#        accountid=None
-#        for acctid in self.eventDestinationCollectionDb:
-#            if( username == self.eventDestinationCollectionDb[acctid]["UserName"] ):
-#                accountid=acctid
-#                break
-#
-#        # if we didn't find the username, return error
-#        # since the username is invalid, we cant count invalid login attempts
-#        if accountid is None:
-#            return(404, "Not Found-Username Not Found",None,None,None)
-#
-#        # check if the account is disabled
-#        if( self.eventDestinationCollectionDb[accountid]["Enabled"] is False ): 
-#            return(401, "Not Authorized--Account Disabled",None,None,None)
-#
-#        # check if account was locked 
-#        #    if it is locked but has now exceeded LockoutDuration then unlock and continue
-#        #    if it is locked and not exceeded lockout duration, return 401 Not authorized
-#        curTime=time.time()
-#        if self.accountsDict[accountid]["Locked"] is True:
-#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.eventServiceDb["AccountLockoutDuration"] ):
-#                # the lockout duration has expired.   unlock it.
-#                self.accountsDict[accountid]["Locked"]=False
-#                self.accountsDict[accountid]["LockedTime"]=0
-#                self.accountsDict[accountid]["FailedLoginCount"]=0
-#                self.accountsDict[accountid]["AuthFailTime"]=0
-#            else:
-#                # lockout duration has not expired, return auth error
-#                return(401, "Not Authorized--Account Locked By Service",None,None,None)
-#
-#        #the accountid exists, and account is enabled and not locked
-#
-#        #reset the AuthFailTime if time since last login failure is > AccountLockoutCounterResetAfter
-#        authFailTime=self.accountsDict[accountid]["AuthFailTime"]
-#        if( authFailTime != 0 ):
-#            # if we have had failures and are counting authentication failures
-#            resetAfterThreshold=self.eventServiceDb["AccountLockoutCounterResetAfter"]
-#            if( ( curTime - authFailTime ) > resetAfterThreshold ):
-#                # if time since last failure is greater than the reset counter threshold, then reset the counters
-#                self.accountsDict[accountid]["AuthFailTime"]=0
-#                self.accountsDict[accountid]["FailedLoginCount"]=0
-#
-#        #now check the associated password to see if authentication passis this time 
-#        #check password
-#        #xg11
-#        #if( password != self.eventDestinationCollectionDb[accountid]["Password"] ): # TODO change to check hash
-#        if self.cryptContext.verify(password, self.eventDestinationCollectionDb[accountid]["Password"]) is not True:
-#            # authentication failed.
-#
-#            # check if lockout on authentication failures is enabled
-#            lockoutThreshold=self.eventServiceDb["AccountLockoutThreshold"]
-#            lockoutDuration=self.eventServiceDb["AccountLockoutDuration"]
-#
-#            # lockoutThreshold and lockoutDuration must BOTH be non-zero to enable lock on auth failures
-#            if( (lockoutThreshold > 0) and (lockoutDuration > 0) ):
-#                # check if we have now exceeded the login failures and need to lock the account
-#                failedLoginCount=self.accountsDict[accountid]["FailedLoginCount"] + 1
-#                if( failedLoginCount >= lockoutThreshold ):
-#                    # lock the account and clear the AuthFailTime and FailedLogin counters
-#                    self.accountsDict[accountid]["Locked"]=True
-#                    self.accountsDict[accountid]["LockedTime"]=curTime
-#                    self.accountsDict[accountid]["AuthFailTime"]=0
-#                    self.accountsDict[accountid]["FailedLoginCount"]=0
-#                    return(401, "Not Authorized--Password Incorrect and Account is now Locked By Service",None,None,None)
-#                else:
-#                    # we have not exceeded the failed authN threshold, update the counter and continue
-#                    self.accountsDict[accountid]["FailedLoginCount"]=failedLoginCount
-#                    self.accountsDict[accountid]["AuthFailTime"]=curTime
-#                    return(401, "Not Authorized--Password Incorrect",None,None,None)
-#
-#            else:
-#                # case where account lockout is not enabled
-#                return(401, "Not Authorized--Password Incorrect",None,None,None)
-#
-#        #if here, the authentication was successful
-#        #reset the lockout timers
-#        self.accountsDict[accountid]["FailedLoginCount"]=0
-#        self.accountsDict[accountid]["AuthFailTime"]=0
-#
-#        storedpassword=self.eventDestinationCollectionDb[accountid]["Password"]
-#        storedRoleId=self.eventDestinationCollectionDb[accountid]["RoleId"]
-#        storedPrivileges=self.rolesDb[storedRoleId]["AssignedPrivileges"]
-#
-#        # if here, all ok, return privileges
-#        #   returns:  rc, errMsgString, userName, roleId, userPrivileges
-#        return(0, "OK", accountid, storedRoleId, storedPrivileges )
-#
-#
-#
-#
-#    # ------------Roles Collection Functions----------------
-#
-#    # GET RolesCollection
-#    # GET roles Collection
-#    def getRolesCollectionResource(self, request):
-#        hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
-#                                     resource=self.rolesCollectionTemplate)
-#        if request.method=="HEAD":
-#            return(0,200,"","",hdrs)
-#
-#        # the routine copies a template file with the static redfish parameters
-#        # then it updates the dynamic properties from the rolesDb dict
-#        # for RolesCollection GET, we build the Members array
-#
-#        # copy the rolesCollection template file (which has an empty roles array)
-#        resData2=dict(self.rolesCollectionTemplate)
-#        count=0
-#        # now walk through the entries in the rolesDb and build the rolesCollection Members array
-#        # note that the members array is an empty array in the template
-#        roleUriBase="/redfish/v1/AccountService/Roles/"
-#        for roleid in self.rolesDb:
-#            # increment members count, and create the member for the next entry
-#            count=count+1
-#            memberUri=roleUriBase + roleid
-#            newMember=[{"@odata.id": memberUri}]
-#
-#            # add the new member to the members array we are building
-#            resData2["Members"] = resData2["Members"] + newMember
-#        resData2["Members@odata.count"]=count
-#
-#        # convert to json
-#        jsonRespData2=(json.dumps(resData2,indent=4))
-#
-#        return(0, 200, "", jsonRespData2, hdrs)
-#
-#
-#    # GET Role Entry
-#    def getRoleEntry(self, request, roleid):
-#
-#        # First verify that the roleId is valid
-#        if roleid not in self.rolesDb:
-#            # generate error header for 4xx errors
-#            errhdrs=self.hdrs.rfRespHeaders(request)
-#            return(4, 404, "Not Found", "",errhdrs)
-#
-#        # generate header info depending on the specific roleId
-#        # predefined roles cannot be deleted or modified
-#        #     self.rolesDb[roleid]={"Name": rolename, "Description": roleDescription, "IsPredefined": idPredefined, 
-#        #                       "AssignedPrivileges": privileges }
-#        if self.rolesDb[roleid]["IsPredefined"] is True:
-#            # pre-defined roles cannot be deleted or modified
-#            allowMethods="Get"
-#        else:
-#            allowMethods=["HEAD","GET","PATCH","DELETE"],
-#        respHdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=allowMethods,
-#                                     resource=self.EventDestinationTemplate)
-#        if request.method=="HEAD":
-#            return(0,200,"","",respHdrs)
-#
-#        # copy the template EventDestination resource
-#        resData2=dict(self.EventDestinationTemplate)
-#
-#        # now overwrite the dynamic data from the rolesDb 
-#        EventDestinationUri="/redfish/v1/AccountService/Roles/" + roleid
-#        resData2["@odata.id"]=EventDestinationUri
-#        resData2["Id"]=roleid
-#        resData2["Name"]=self.rolesDb[roleid]["Name"]
-#        resData2["Description"]=self.rolesDb[roleid]["Description"]
-#        resData2["IsPredefined"]=self.rolesDb[roleid]["IsPredefined"]
-#        resData2["AssignedPrivileges"]=self.rolesDb[roleid]["AssignedPrivileges"]
-#        if "RoleId" in self.rolesDb[roleid]:
-#            resData2["RoleId"]=self.rolesDb[roleid]["RoleId"]
-#        else:
-#            resData2["RoleId"]=roleid
-#
-#        # convert to json
-#        jsonResponseData=(json.dumps(resData2,indent=4))
-#
-#        return(0, 200, "", jsonResponseData, respHdrs)
-#
-#
-#    # Post RolesCollection
-#    # POST to roles collection  (add a custom role)
-#    def postRolesResource(self, request, postData):
-#        # generate headers for 4xx error messages
-#        errhdrs = self.hdrs.rfRespHeaders(request )
-#
-#        # first verify that the client didn't send us a property we cant patch
-#        # we need to fail the request if we cant handle any properties sent
-#        #   note that this implementation does not support OemPrivileges
-#        for key in postData:
-#            if( (key != "Id") and (key != "AssignedPrivileges") and (key != "RoleId")):
-#                return (4, 400, "Bad Request-Invalid Post Property Sent", "", errhdrs)
-#        # now check that all required on create properties were sent as post data
-#        privileges=None
-#
-#        # Note RedDrum allows sending either "Id" or "RoleId" because early schema definitions did not
-#        #   include the RoldId property and clients like Redfishtool used Id to identify the role
-#        #   Starting with Role.v1_2_0, the RoleId was added as RequiredOnCreate 
-#        #   so RedDrum will require EITHER RoleId or Id and will use RoleId if both are sent
-#        if( "RoleId" in postData):
-#            roleId=postData['RoleId']
-#        elif( "Id" in postData):
-#            roleId=postData['Id']
-#        else:
-#            roleId=None
-#
-#        if("AssignedPrivileges" in postData):
-#            privileges=postData['AssignedPrivileges']
-#
-#        if( (roleId is None) or (privileges is None) ):
-#            return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
-#
-#        # now verify that the post data properties have valid values
-#        if roleId in self.rolesDb:   # if the roleId already exists, return error
-#            return (4, 400, "Bad Request-Invalid RoleId--RoleId already exists", "",errhdrs)
-#        validPrivilegesList=("Login","ConfigureManager","ConfigureUsers","ConfigureSelf","ConfigureComponents")
-#        for priv in privileges:
-#            if priv not in validPrivilegesList:
-#                return (4, 400, "Bad Request-Invalid Privilige", "",errhdrs)
-#
-#        # create response header data
-#        locationUri="/redfish/v1/AccountService/Roles/" + roleId
-#        #respHeaderData={"Location": locationUri}
-#
-#        # create rolesDb data and response properties
-#        roleName=roleId + "Custom Role"
-#        roleDescription="Custom Role"
-#        isPredefined=False
-#
-#        # add the new role entry to add to the roleDb
-#        self.rolesDb[roleId]={"RoleId": roleId, "Name": roleName, "Description": roleDescription, "IsPredefined": isPredefined, 
-#            "AssignedPrivileges": privileges }
-#
-#        # write the data back out to the eventService/Roles database file
-#        rolesDbJson=json.dumps(self.rolesDb,indent=4)
-#        with open( self.rolesDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(rolesDbJson)
-#
-#        # get the response data
-#        rc,status,msg,respData,respHdr=self.getRoleEntry(request, roleId)
-#        if( rc != 0):
-#            #something went wrong--return 500
-#            return(5, 500, "Error Getting New Role Data","",{})
-#
-#        # get the response Header with Link and Location headers
-#        respHeaderData = self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.EventDestinationTemplate)
-#
-#        #return to flask uri handler, include location header
-#        return(0, 201, "Created",respData,respHeaderData)
-#
-#
-#
-#    # delete the Role
-#    # all we have to do is verify the roleid is correct--
-#    # and then, if it is valid, delete the entry for that roleid from the rolesDb
-#    # For reference: the rolesDb:
-#    #    self.rolesDb[roleId]={"Name": rolename, "Description": roleDescription, "IsPredefined": idPredefined, 
-#    #       "AssignedPrivileges": privileges }
-#    def deleteRole(self, request, roleid):
-#        # generate the headers
-#        hdrs=self.hdrs.rfRespHeaders(request)
-#
-#        # First, verify that the roleid is valid
-#        if roleid not in self.rolesDb:
-#            return(4, 404, "Not Found","",hdrs)
-#
-#        # 2nd: verify this is not a pre-defined role that cannot be deleted
-#        if self.rolesDb[roleid]["IsPredefined"] is True:
-#            resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="Get" )
-#            return(4, 405, "Method Not Allowed--Builtin Roles cannot be deleted","",resp405Hdrs)
-#
-#        # get the roleId name if it is included in the rolesDb
-#        if "RoleId" in self.rolesDb[roleid]:
-#            roleidName=self.rolesDb[roleid]["RoleId"]
-#        else:
-#            roleidName=roleid
-#        
-#        roleIdIsUsed=False
-#        for accountid in self.eventDestinationCollectionDb:
-#            if self.eventDestinationCollectionDb[accountid]["RoleId"]==roleidName:
-#                roleIdIsUsed=True
-#        if roleIdIsUsed is True:
-#            return(4, 409, "Conflict-Role is being used by an existing user account", "", hdrs)
-#
-#        # otherwise go ahead and delete the roleid
-#        del self.rolesDb[roleid]
-#
-#        return(0, 204, "No Content", "", hdrs)
-#
-#
-#    # Patch Role
-#    # PATCH a ROLE ENTRY
-#    def patchRoleEntry(self, request, roleid, patchData):
-#        # generate headers
-#        hdrs = self.hdrs.rfRespHeaders(request)
-#
-#        # First, verify that the roleId is valid, 
-#        if roleid not in self.rolesDb:
-#            return(4, 404, "Not Found","",hdrs)
-#
-#        # verify this is not a pre-defined role that cannot be patched/modified
-#        if self.rolesDb[roleid]["IsPredefined"] is True:
-#            resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="Get" )
-#            return(4, 405, "Method Not Allowed--Builtin Roles cannot be Patched","",resp405Hdrs)
-#
-#        # verify that the patch data is good
-#        # first verify that ALL of the properties sent in patch data are patchable for redfish spec
-#        for prop in patchData:
-#            if prop != "AssignedPrivileges":
-#                return (4, 400, "Bad Request-one or more properties not patchable", "",hdrs)
-#
-#        # check if any privilege is not valid
-#        redfishPrivileges=("Login","ConfigureManager","ConfigureUsers","ConfigureSelf","ConfigureComponents")
-#        if "AssignedPrivileges" in patchData:
-#            for privilege in patchData["AssignedPrivileges"]:
-#                if not privilege in redfishPrivileges:
-#                    return (4, 400, "Bad Request-one or more Privileges are invalid", "",hdrs)
-#
-#        # if here, all values are good. Update the eventServiceDb dict
-#        self.rolesDb[roleid]["AssignedPrivileges"]=patchData["AssignedPrivileges"]
-#
-#        #xg5 note: service currently does not support oem privileges
-#
-#        # write the rolesDb back out to the file
-#        dbDictJson=json.dumps(self.rolesDb, indent=4)
-#        with open( self.rolesDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(dbDictJson)
-#
-#        return(0, 204, "No Content", "", hdrs)
-#
+
+
+
 #
 #    # ------------Accounts Collection Functions----------------
 #
@@ -674,148 +440,7 @@ class RfEventService():
 #        return(0, 200, "",jsonResponseData, respHdrs)
 #
 #
-#    # general account service function to calculate the AccountEntry Etag
-#    #    this is a STRONG Etag
-#    #    Example:   etag="1ABCDEREDR"
-#    def calculateAccountEtag(self, accountid):
-#        enable   = self.eventDestinationCollectionDb[accountid]["Enabled"]
-#        locked   = self.accountsDict[accountid]["Locked"]  
-#        username = self.eventDestinationCollectionDb[accountid]["UserName"]
-#        password = self.eventDestinationCollectionDb[accountid]["Password"]
-#        roleId   = self.eventDestinationCollectionDb[accountid]["RoleId"]
-#        #etag="\"1234\""
-#
-#        flag = 0
-#        if enable is True:
-#            flag = flag+1
-#        if locked is True:
-#            flag = flag+2
-#        m = hashlib.md5()
-#        m.update((username+password+roleId).encode('utf-8'))
-#        etagValue = str(flag) + m.hexdigest()
-#        return(etagValue)
-#        #etagHdr={"ETag": "\"" + m.hexdigest() + "\"" }
-#        #return(etagHdr)
-#
-#
-#    # POST Accounts
-#    # POST to Accounts collection  (add user)
-#    def postAccountsResource(self,request, postData):
-#        # generate headers for 4xx error messages
-#        errhdrs = self.hdrs.rfRespHeaders(request )
-#
-#        # first verify that the client didn't send us a property we cant write when creating the account
-#        # we need to fail the request if we cant handle any properties sent
-#        patchables=("UserName","Password","RoleId","Enabled","Locked")
-#        for prop in postData:
-#            if not prop in patchables:
-#                return (4, 400, "Bad Request-Invalid Post Property Sent", "",errhdrs)
-#
-#        #get the data needed to create the account
-#        username=None
-#        password=None
-#        roleid=None
-#        enabled=True
-#        locked=False
-#
-#        if( "UserName" in postData):
-#            username=postData['UserName']
-#
-#        if("Password" in postData):
-#            password=postData['Password']
-#
-#        if("RoleId" in postData):
-#            roleId=postData['RoleId']
-#
-#        if("Enabled" in postData):
-#            enabled=postData['Enabled']
-#
-#        if("Locked" in postData):
-#            locked=postData['Locked']
-#
-#        # now check that all required on create properties were sent as post data
-#        if( (username is None) or (password is None) or (roleId is None ) ):
-#            return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
-#
-#        # now verify that the Post data is valid
-#
-#        # check if this username already exists
-#        for userId in self.eventDestinationCollectionDb:
-#            if (username == self.eventDestinationCollectionDb[userId]["UserName"]):
-#                return (4, 400, "Bad Request-Username already exists", "",errhdrs)
-#
-#        # check if password length is less than value set in eventService MinPasswordLength
-#        if "MinPasswordLength" in self.eventServiceDb:
-#            if len(password) < self.eventServiceDb["MinPasswordLength"]:
-#                return (4, 400, "Bad Request-Password length less than min", "",errhdrs)
-#        if "MaxPasswordLength" in self.eventServiceDb:
-#            if len(password) > self.eventServiceDb["MaxPasswordLength"]:
-#                return (4, 400, "Bad Request-Password length exceeds max", "",errhdrs)
-#        # check if password meets regex requirements---no whitespace or ":"
-#        passwordMatchPattern="^[^\s:]+$"
-#        passwordMatch = re.search(passwordMatchPattern,password)
-#        if not passwordMatch:
-#            return (4, 400, "Bad Request-invalid password-whitespace or : is not allowed", "",errhdrs)
-#
-#        # check if roleId does not exist
-#        #   check if the specified "RoleId" properly matches the RoleId property in RolesDb
-#        #   but if no RoleId property in RolesDb entry, check against the id of the role in RolesDb
-#        foundRoleId = False
-#        for roleid in self.rolesDb:
-#            if "RoleId" in self.rolesDb[roleid]:
-#                thisRoleIdName = self.rolesDb[roleid]["RoleId"]
-#            else:
-#                thisRoleIdName = roleId  # early Redfish model before RoleId prop existed in Roles
-#            # check if the specified roleId for the user matches one in the rolesDb 
-#            if thisRoleIdName == roleId:
-#                foundRoleId=True
-#                break    # so roleId will be the roleid value
-#
-#        # if roleId was not found, return Bad Request error
-#        if foundRoleId is not True:
-#            return (4, 400, "Bad Request-roleId does not exist", "",errhdrs)
-#
-#        # check if Enabled is a boul
-#        if (enabled is not True) and (enabled is not False):
-#            return (4, 400, "Bad Request-Enabled must be either True or False", "",errhdrs)
-#        # check if Locked  is a boul
-#        if locked is not False:
-#            return (4, 400, "Bad Request-Locked can only be set to False by user", "",errhdrs)
-#
-#        # create response header data
-#        accountid=username
-#        locationUri="/redfish/v1/AccountService/Accounts/" + accountid
-#
-#        # add the new account entry to the eventDestinationCollectionDb
-#        self.eventDestinationCollectionDb[accountid]={"UserName": username, "Password": password, 
-#                  "RoleId": roleId, "Enabled": enabled, "Deletable": True}
-#
-#        # add the new account entry to the accountsDict
-#        dfltAccountDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
-#        self.accountsDict[accountid]=dfltAccountDictEntry
-#
-#        # write the AccountDb back out to the file
-#        dbFilePath=os.path.join(self.rdr.varDataPath,"db", "AccountsDb.json")
-#        dbDictJson=json.dumps(self.eventDestinationCollectionDb, indent=4)
-#        with open( dbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(dbDictJson)
-#        
-#        # get the response data
-#        rc,status,msg,respData,respHdr=self.getAccountEntry(request, accountid)
-#        if( rc != 0):
-#            #something went wrong--return 500
-#            return(5, 500, "Error Getting New Account Data","",{})
-#
-### Not required
-#        # calculate eTag
-#        etagValue=self.calculateAccountEtag(accountid)
-#
-#        # get the response Header with Link, and Location
-#        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri,
-#                                     resource=self.accountEntryTemplate, strongEtag=etagValue)
-#
-#        #return to flask uri handler
-#        return(0, 201, "Created",respData,respHeaderData)
+
 #
 #
 #
@@ -1040,6 +665,87 @@ class RfEventService():
 #        respHdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow=allowMethods)
 #
 #        return(0, 405, "Method Not Allowed","", respHdrs)
+
+#    # ------------Roles Collection Functions----------------
+#
+#    # GET RolesCollection
+#    # GET roles Collection
+#    def getRolesCollectionResource(self, request):
+#        hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
+#                                     resource=self.rolesCollectionTemplate)
+#        if request.method=="HEAD":
+#            return(0,200,"","",hdrs)
+#
+#        # the routine copies a template file with the static redfish parameters
+#        # then it updates the dynamic properties from the rolesDb dict
+#        # for RolesCollection GET, we build the Members array
+#
+#        # copy the rolesCollection template file (which has an empty roles array)
+#        resData2=dict(self.rolesCollectionTemplate)
+#        count=0
+#        # now walk through the entries in the rolesDb and build the rolesCollection Members array
+#        # note that the members array is an empty array in the template
+#        roleUriBase="/redfish/v1/AccountService/Roles/"
+#        for roleid in self.rolesDb:
+#            # increment members count, and create the member for the next entry
+#            count=count+1
+#            memberUri=roleUriBase + roleid
+#            newMember=[{"@odata.id": memberUri}]
+#
+#            # add the new member to the members array we are building
+#            resData2["Members"] = resData2["Members"] + newMember
+#        resData2["Members@odata.count"]=count
+#
+#        # convert to json
+#        jsonRespData2=(json.dumps(resData2,indent=4))
+#
+#        return(0, 200, "", jsonRespData2, hdrs)
+#
+#
+#    # GET Role Entry
+#    def getRoleEntry(self, request, roleid):
+#
+#        # First verify that the roleId is valid
+#        if roleid not in self.rolesDb:
+#            # generate error header for 4xx errors
+#            errhdrs=self.hdrs.rfRespHeaders(request)
+#            return(4, 404, "Not Found", "",errhdrs)
+#
+#        # generate header info depending on the specific roleId
+#        # predefined roles cannot be deleted or modified
+#        #     self.rolesDb[roleid]={"Name": rolename, "Description": roleDescription, "IsPredefined": idPredefined, 
+#        #                       "AssignedPrivileges": privileges }
+#        if self.rolesDb[roleid]["IsPredefined"] is True:
+#            # pre-defined roles cannot be deleted or modified
+#            allowMethods="Get"
+#        else:
+#            allowMethods=["HEAD","GET","PATCH","DELETE"],
+#        respHdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=allowMethods,
+#                                     resource=self.EventDestinationTemplate)
+#        if request.method=="HEAD":
+#            return(0,200,"","",respHdrs)
+#
+#        # copy the template EventDestination resource
+#        resData2=dict(self.EventDestinationTemplate)
+#
+#        # now overwrite the dynamic data from the rolesDb 
+#        EventDestinationUri="/redfish/v1/AccountService/Roles/" + roleid
+#        resData2["@odata.id"]=EventDestinationUri
+#        resData2["Id"]=roleid
+#        resData2["Name"]=self.rolesDb[roleid]["Name"]
+#        resData2["Description"]=self.rolesDb[roleid]["Description"]
+#        resData2["IsPredefined"]=self.rolesDb[roleid]["IsPredefined"]
+#        resData2["AssignedPrivileges"]=self.rolesDb[roleid]["AssignedPrivileges"]
+#        if "RoleId" in self.rolesDb[roleid]:
+#            resData2["RoleId"]=self.rolesDb[roleid]["RoleId"]
+#        else:
+#            resData2["RoleId"]=roleid
+#
+#        # convert to json
+#        jsonResponseData=(json.dumps(resData2,indent=4))
+#
+#        return(0, 200, "", jsonResponseData, respHdrs)
+#
 #
 #    def postPutRoleEntry(self, request, roleid):
 #        # the function returns a 405-Method not allowed
@@ -1061,6 +767,258 @@ class RfEventService():
 #
 #        return(0, 405, "Method Not Allowed","", respHdrs)
 #
+#def getAccountAuthInfo(self, username, password ):
+#        authFailed=False
+#        storedUsername=None
+#        storedPassword=None
+#        storedPrivileges=None
+#        # if username or password is not None, it is an error
+#        if username is None:
+#            return(500, "Invalid Auth Check for username",None,None,None)
+#        if password is None:
+#            return(500, "Invalid Auth Check for password",None,None,None)
+#
+#        # from username, lookup accountId --- they are not necessarily the same
+#        accountid=None
+#        for acctid in self.eventDestinationCollectionDb:
+#            if( username == self.eventDestinationCollectionDb[acctid]["UserName"] ):
+#                accountid=acctid
+#                break
+#
+#        # if we didn't find the username, return error
+#        # since the username is invalid, we cant count invalid login attempts
+#        if accountid is None:
+#            return(404, "Not Found-Username Not Found",None,None,None)
+#
+#        # check if the account is disabled
+#        if( self.eventDestinationCollectionDb[accountid]["Enabled"] is False ): 
+#            return(401, "Not Authorized--Account Disabled",None,None,None)
+#
+#        # check if account was locked 
+#        #    if it is locked but has now exceeded LockoutDuration then unlock and continue
+#        #    if it is locked and not exceeded lockout duration, return 401 Not authorized
+#        curTime=time.time()
+#        if self.accountsDict[accountid]["Locked"] is True:
+#            if( (curTime - self.accountsDict[accountid]["LockedTime"]) > self.eventServiceDb["AccountLockoutDuration"] ):
+#                # the lockout duration has expired.   unlock it.
+#                self.accountsDict[accountid]["Locked"]=False
+#                self.accountsDict[accountid]["LockedTime"]=0
+#                self.accountsDict[accountid]["FailedLoginCount"]=0
+#                self.accountsDict[accountid]["AuthFailTime"]=0
+#            else:
+#                # lockout duration has not expired, return auth error
+#                return(401, "Not Authorized--Account Locked By Service",None,None,None)
+#
+#        #the accountid exists, and account is enabled and not locked
+#
+#        #reset the AuthFailTime if time since last login failure is > AccountLockoutCounterResetAfter
+#        authFailTime=self.accountsDict[accountid]["AuthFailTime"]
+#        if( authFailTime != 0 ):
+#            # if we have had failures and are counting authentication failures
+#            resetAfterThreshold=self.eventServiceDb["AccountLockoutCounterResetAfter"]
+#            if( ( curTime - authFailTime ) > resetAfterThreshold ):
+#                # if time since last failure is greater than the reset counter threshold, then reset the counters
+#                self.accountsDict[accountid]["AuthFailTime"]=0
+#                self.accountsDict[accountid]["FailedLoginCount"]=0
+#
+#        #now check the associated password to see if authentication passis this time 
+#        #check password
+#        #xg11
+#        #if( password != self.eventDestinationCollectionDb[accountid]["Password"] ): # TODO change to check hash
+#        if self.cryptContext.verify(password, self.eventDestinationCollectionDb[accountid]["Password"]) is not True:
+#            # authentication failed.
+#
+#            # check if lockout on authentication failures is enabled
+#            lockoutThreshold=self.eventServiceDb["AccountLockoutThreshold"]
+#            lockoutDuration=self.eventServiceDb["AccountLockoutDuration"]
+#
+#            # lockoutThreshold and lockoutDuration must BOTH be non-zero to enable lock on auth failures
+#            if( (lockoutThreshold > 0) and (lockoutDuration > 0) ):
+#                # check if we have now exceeded the login failures and need to lock the account
+#                failedLoginCount=self.accountsDict[accountid]["FailedLoginCount"] + 1
+#                if( failedLoginCount >= lockoutThreshold ):
+#                    # lock the account and clear the AuthFailTime and FailedLogin counters
+#                    self.accountsDict[accountid]["Locked"]=True
+#                    self.accountsDict[accountid]["LockedTime"]=curTime
+#                    self.accountsDict[accountid]["AuthFailTime"]=0
+#                    self.accountsDict[accountid]["FailedLoginCount"]=0
+#                    return(401, "Not Authorized--Password Incorrect and Account is now Locked By Service",None,None,None)
+#                else:
+#                    # we have not exceeded the failed authN threshold, update the counter and continue
+#                    self.accountsDict[accountid]["FailedLoginCount"]=failedLoginCount
+#                    self.accountsDict[accountid]["AuthFailTime"]=curTime
+#                    return(401, "Not Authorized--Password Incorrect",None,None,None)
+#
+#            else:
+#                # case where account lockout is not enabled
+#                return(401, "Not Authorized--Password Incorrect",None,None,None)
+#
+#        #if here, the authentication was successful
+#        #reset the lockout timers
+#        self.accountsDict[accountid]["FailedLoginCount"]=0
+#        self.accountsDict[accountid]["AuthFailTime"]=0
+#
+#        storedpassword=self.eventDestinationCollectionDb[accountid]["Password"]
+#        storedRoleId=self.eventDestinationCollectionDb[accountid]["RoleId"]
+#        storedPrivileges=self.rolesDb[storedRoleId]["AssignedPrivileges"]
+#
+#        # if here, all ok, return privileges
+#        #   returns:  rc, errMsgString, userName, roleId, userPrivileges
+#        return(0, "OK", accountid, storedRoleId, storedPrivileges )
+#
+#
+
+##    # Post RolesCollection
+#    # POST to roles collection  (add a custom role)
+#    def postRolesResource(self, request, postData):
+#        # generate headers for 4xx error messages
+#        errhdrs = self.hdrs.rfRespHeaders(request )
+#
+#        # first verify that the client didn't send us a property we cant patch
+#        # we need to fail the request if we cant handle any properties sent
+#        #   note that this implementation does not support OemPrivileges
+#        for key in postData:
+#            if( (key != "Id") and (key != "AssignedPrivileges") and (key != "RoleId")):
+#                return (4, 400, "Bad Request-Invalid Post Property Sent", "", errhdrs)
+#        # now check that all required on create properties were sent as post data
+#        privileges=None
+#
+#        # Note RedDrum allows sending either "Id" or "RoleId" because early schema definitions did not
+#        #   include the RoldId property and clients like Redfishtool used Id to identify the role
+#        #   Starting with Role.v1_2_0, the RoleId was added as RequiredOnCreate 
+#        #   so RedDrum will require EITHER RoleId or Id and will use RoleId if both are sent
+#        if( "RoleId" in postData):
+#            roleId=postData['RoleId']
+#        elif( "Id" in postData):
+#            roleId=postData['Id']
+#        else:
+#            roleId=None
+#
+#        if("AssignedPrivileges" in postData):
+#            privileges=postData['AssignedPrivileges']
+#
+#        if( (roleId is None) or (privileges is None) ):
+#            return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
+#
+#        # now verify that the post data properties have valid values
+#        if roleId in self.rolesDb:   # if the roleId already exists, return error
+#            return (4, 400, "Bad Request-Invalid RoleId--RoleId already exists", "",errhdrs)
+#        validPrivilegesList=("Login","ConfigureManager","ConfigureUsers","ConfigureSelf","ConfigureComponents")
+#        for priv in privileges:
+#            if priv not in validPrivilegesList:
+#                return (4, 400, "Bad Request-Invalid Privilige", "",errhdrs)
+#
+#        # create response header data
+#        locationUri="/redfish/v1/AccountService/Roles/" + roleId
+#        #respHeaderData={"Location": locationUri}
+#
+#        # create rolesDb data and response properties
+#        roleName=roleId + "Custom Role"
+#        roleDescription="Custom Role"
+#        isPredefined=False
+#
+#        # add the new role entry to add to the roleDb
+#        self.rolesDb[roleId]={"RoleId": roleId, "Name": roleName, "Description": roleDescription, "IsPredefined": isPredefined, 
+#            "AssignedPrivileges": privileges }
+#
+#        # write the data back out to the eventService/Roles database file
+#        rolesDbJson=json.dumps(self.rolesDb,indent=4)
+#        with open( self.rolesDbFilePath, 'w', encoding='utf-8') as f:
+#            f.write(rolesDbJson)
+#
+#        # get the response data
+#        rc,status,msg,respData,respHdr=self.getRoleEntry(request, roleId)
+#        if( rc != 0):
+#            #something went wrong--return 500
+#            return(5, 500, "Error Getting New Role Data","",{})
+#
+#        # get the response Header with Link and Location headers
+#        respHeaderData = self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.EventDestinationTemplate)
+#
+#        #return to flask uri handler, include location header
+#        return(0, 201, "Created",respData,respHeaderData)
+#
+#
+#
+#    # delete the Role
+#    # all we have to do is verify the roleid is correct--
+#    # and then, if it is valid, delete the entry for that roleid from the rolesDb
+#    # For reference: the rolesDb:
+#    #    self.rolesDb[roleId]={"Name": rolename, "Description": roleDescription, "IsPredefined": idPredefined, 
+#    #       "AssignedPrivileges": privileges }
+#    def deleteRole(self, request, roleid):
+#        # generate the headers
+#        hdrs=self.hdrs.rfRespHeaders(request)
+#
+#        # First, verify that the roleid is valid
+#        if roleid not in self.rolesDb:
+#            return(4, 404, "Not Found","",hdrs)
+#
+#        # 2nd: verify this is not a pre-defined role that cannot be deleted
+#        if self.rolesDb[roleid]["IsPredefined"] is True:
+#            resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="Get" )
+#            return(4, 405, "Method Not Allowed--Builtin Roles cannot be deleted","",resp405Hdrs)
+#
+#        # get the roleId name if it is included in the rolesDb
+#        if "RoleId" in self.rolesDb[roleid]:
+#            roleidName=self.rolesDb[roleid]["RoleId"]
+#        else:
+#            roleidName=roleid
+#        
+#        roleIdIsUsed=False
+#        for accountid in self.eventDestinationCollectionDb:
+#            if self.eventDestinationCollectionDb[accountid]["RoleId"]==roleidName:
+#                roleIdIsUsed=True
+#        if roleIdIsUsed is True:
+#            return(4, 409, "Conflict-Role is being used by an existing user account", "", hdrs)
+#
+#        # otherwise go ahead and delete the roleid
+#        del self.rolesDb[roleid]
+#
+#        return(0, 204, "No Content", "", hdrs)
+#
+#
+#    # Patch Role
+#    # PATCH a ROLE ENTRY
+#    def patchRoleEntry(self, request, roleid, patchData):
+#        # generate headers
+#        hdrs = self.hdrs.rfRespHeaders(request)
+#
+#        # First, verify that the roleId is valid, 
+#        if roleid not in self.rolesDb:
+#            return(4, 404, "Not Found","",hdrs)
+#
+#        # verify this is not a pre-defined role that cannot be patched/modified
+#        if self.rolesDb[roleid]["IsPredefined"] is True:
+#            resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="Get" )
+#            return(4, 405, "Method Not Allowed--Builtin Roles cannot be Patched","",resp405Hdrs)
+#
+#        # verify that the patch data is good
+#        # first verify that ALL of the properties sent in patch data are patchable for redfish spec
+#        for prop in patchData:
+#            if prop != "AssignedPrivileges":
+#                return (4, 400, "Bad Request-one or more properties not patchable", "",hdrs)
+#
+#        # check if any privilege is not valid
+#        redfishPrivileges=("Login","ConfigureManager","ConfigureUsers","ConfigureSelf","ConfigureComponents")
+#        if "AssignedPrivileges" in patchData:
+#            for privilege in patchData["AssignedPrivileges"]:
+#                if not privilege in redfishPrivileges:
+#                    return (4, 400, "Bad Request-one or more Privileges are invalid", "",hdrs)
+#
+#        # if here, all values are good. Update the eventServiceDb dict
+#        self.rolesDb[roleid]["AssignedPrivileges"]=patchData["AssignedPrivileges"]
+#
+#        #xg5 note: service currently does not support oem privileges
+#
+#        # write the rolesDb back out to the file
+#        dbDictJson=json.dumps(self.rolesDb, indent=4)
+#        with open( self.rolesDbFilePath, 'w', encoding='utf-8') as f:
+#            f.write(dbDictJson)
+#
+#        return(0, 204, "No Content", "", hdrs)
+#
+
 ## end
 ## NOTES TODO
 ## if you delete a role, verify that no user is assigned that role
