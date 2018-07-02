@@ -23,7 +23,8 @@ class RfChassisResource():
         sys.stdout.flush()
         self.hdrs=RfAddHeaders(rfr)
 
-        self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber"]
+        self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber",
+             "Location" ]
         self.nonVolatileProperties=[ "AssetTag" ]
         self.temperatureStaticProperties=["Name", "SensorNumber", "UpperThresholdNonCritical", "UpperThresholdCritical", 
              "UpperThresholdFatal", "LowerThresholdNonCritical", "LowerThresholdCritical", "LowerThresholdFatal", 
@@ -39,8 +40,10 @@ class RfChassisResource():
              "MinReadingRange", "MaxReadingRange", "PhysicalContext"  ]
         self.voltagesNonVolatileProperties=[]
         self.powerControlStaticProperties=["Name","PhysicalContext" ]
-        self.powerControlPowerLimitNonVolatileProperties=["LimitInWatts", "LimitException" ]
+        self.powerControlPowerLimitNonVolatileProperties=["LimitInWatts", "LimitException", "CorrectionInMs" ]
         self.powerControlVolatileProperties=[ "PowerConsumedWatts" ]
+        self.powerControlNonVolatileProperties=[ "PowerAllocatedWatts","PowerRequestedWatts","PowerCapacityWatts",
+            "PowerAvailableWatts","PowerMetrics" ]
         self.psusStaticProperties=["Name"]
         self.psusNonVolatileProperties=["PowerSupplyType", "LineInputVoltageType", "PowerCapacityWatts", 
             "Manufacturer", "Model","SerialNumber","FirmwareVersion", "PartNumber","SparePartNumber"  ]
@@ -252,9 +255,9 @@ class RfChassisResource():
         basePath="/redfish/v1/Chassis/"
         #self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber"]
         #self.nonVolatileProperties=[ "AssetTag" ]
-        volatileProperties=[ "IndicatorLED", "PowerState"]
+        volatileProperties=[ "IndicatorLED", "PowerState", "PhysicalSecurity"]
         baseNavProperties=["LogServices", "Thermal", "Power"]
-        statusSubProperties=["State", "Health"]
+        statusSubProperties=["State", "Health", "HealthRollup"]
         linkNavProperties=["Contains", "ContainedBy", "PoweredBy", "CooledBy", "ManagedBy", "ComputerSystems", "ManagersInChassis"]
 
         # assign the required properties
@@ -550,10 +553,6 @@ class RfChassisResource():
                             if "Status" not in resp:
                                 resp["Status"]={}
                             resp["Status"][subProp] = resourceDb["Status"][subProp]
-                    else:
-                        if "Status" not in resp:
-                            resp["Status"]={}
-                        resp["Status"][subProp] = resourceDb["Status"][subProp]
         return(resp)
 
 
@@ -991,6 +990,11 @@ class RfChassisResource():
                     if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
                         sensorData[prop] = self.powerControlDb[chassisid]["Id"][powerControlId][prop]
 
+                # add the base powerControl NonVolatile Properties that this service uses
+                for prop in self.powerControlNonVolatileProperties:
+                    if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
+                        sensorData[prop] = self.powerControlDb[chassisid]["Id"][powerControlId][prop]
+
                 # add the PowerLimit Non-volatile Properties that this service uses
                 for prop in self.powerControlPowerLimitNonVolatileProperties:
                     if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
@@ -1010,6 +1014,22 @@ class RfChassisResource():
                               self.powerControlDb[chassisid], self.powerControlVolatileDict[chassisid])
                 for prop in statusProps:
                     sensorData[prop] = statusProps[prop]
+
+                # add the related items properties
+                if "AddRelatedItems" in self.powerControlDb[chassisid]["Id"][powerControlId]:
+                    relatedItemMembers=list()
+                    if "Chassis" in self.powerControlDb[chassisid]["Id"][powerControlId]["AddRelatedItems"]:
+                        relatedItemMember = {"@odata.id": basePath + chassisid }
+                        relatedItemMembers.append(relatedItemMember)
+                    if "System" in self.powerControlDb[chassisid]["Id"][powerControlId]["AddRelatedItems"]:
+                        if "ComputerSystems" in self.chassisDb[chassisid]:
+                            sysid=self.chassisDb[chassisid]["ComputerSystems"]
+                            if( len(sysid) > 0 ):
+                                relatedItemMember = {"@odata.id": systemsBasePath + sysid[0] }
+                                relatedItemMembers.append(relatedItemMember)
+                    # add the RelatedItem Property to the response
+                    if( len(relatedItemMembers) > 0):
+                        sensorData["RelatedItem"] = relatedItemMembers
 
                 powerControlArray.append(sensorData)
 

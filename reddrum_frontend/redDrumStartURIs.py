@@ -780,6 +780,19 @@ def rdStart_RedDrum_Flask_app(rdr):
         return(resp,statusCode,hdrs)
 
     # -----------------------------------------------------------------------
+    # Manager OEM APIs
+    # POST Manager OEM Actions
+    # POST /redfish/v1/Managers/<mgrid>/Actions/Oem/<oemActionId>
+    #    -auth, json
+    @app.route("/redfish/v1/Managers/<mgrid>/Actions/Oem/<oemActionId>", methods=['POST'])
+    @rfcheckHeaders(rfr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]]) 
+    def rfOemManagerAction(mgrid,oemActionId):
+        rdata=request.get_json(cache=True)     
+        rc,statusCode,errString,resp,hdrs=rfr.root.managers.oemManagerAction(request, mgrid, oemActionId, rdata)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+    # -----------------------------------------------------------------------
     # Internal RedDrum APIs used by backends
 
     # Post to Backend 
