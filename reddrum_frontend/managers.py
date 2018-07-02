@@ -5,6 +5,7 @@
 
 import os
 import json
+import copy
 import sys
 import datetime
 import pytz
@@ -301,6 +302,25 @@ class RfManagersResource():
                 responseData2["Actions"]={}
             responseData2["Actions"]["#Manager.Reset"]= resetAction
 
+        # Build the Oem Actions
+        if "AddOemActions" in self.managersDb[managerid] and "Actions" in self.managersDb[managerid]:
+            oemActions=dict()
+            if "Oem" in self.managersDb[managerid]["Actions"]:
+                for oemaction in self.managersDb[managerid]["Actions"]["Oem"]:
+                    #make a copy as we will remove some properties
+                    thisAction=copy.deepcopy(self.managersDb[managerid]["Actions"]["Oem"][oemaction])
+                    if "target" in thisAction and "targetId" in thisAction:
+                        thisAction["target"] = basePath + managerid + "/Actions/Oem/" + thisAction["targetId"]
+                        del thisAction["targetPath"]
+                        del thisAction["targetId"]
+                    oemActions[oemaction]=thisAction
+ 
+            if "Actions" not in responseData2:
+                responseData2["Actions"]={}
+                if "Oem" not in responseData2["Actions"]:
+                    responseData2["Actions"]["Oem"]={}
+            responseData2["Actions"]["Oem"] = oemActions
+
         # build Dell OEM Section 
         if "OemDellG5MCMgrInfo" in self.managersDb[managerid]:
             # define the legal oem properties 
@@ -343,6 +363,7 @@ class RfManagersResource():
                         members.append(newMember)
                     # now add the members array to the response data
                     responseData2["Links"][navProp] = members
+
 
         # convert to json
         jsonRespData2=(json.dumps(responseData2,indent=4))
@@ -604,6 +625,7 @@ class RfManagersResource():
         self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: called backend.doManagerReset()ResetType: {}".format(resetValue))
         rc=self.rdr.backend.managers.doManagerReset(managerid,resetValue)
 
+
         if( rc==0):
             return(0, 204, "", "", hdrs)
         else:
@@ -805,4 +827,40 @@ class RfManagersResource():
 
         return(0, 200, "", jsonRespData2, respHdrs)
 
+
+    # Oem Manager Action  
+    def oemManagerAction(self, request, managerid, actionid, rdata):
+        # verify that the managerid is valid:
+        errhdrs=self.hdrs.rfRespHeaders(request)
+        if managerid not in self.managersDb:
+            return(4, 404, "Not Found - managerId not found", "", errhdrs)
+        elif "AddOemActions" not in  self.managersDb[managerid] and self.managersDb[managerid] is not True:
+            return(4, 404, "Not Found - OEM Actions not supported by manager", "", errhdrs)
+        elif "Actions" not in self.managersDb[managerid] or "Oem" not in self.managersDb[managerid]["Actions"]:
+            # need to update the manager db
+            rc=self.updateResourceDbsFromBackend(managerid)
+            if( rc != 0):
+                self.rfr.logMsg("ERROR","getManagerEntry(): updateResourceDbsFromBackend() returned error ")
+                return(9, 500, "Internal Error", "", errhdrs)
+            if "Actions" not in self.managersDb[managerid] or "Oem" not in self.managersDb[managerid]["Actions"]:
+                return(4, 404, "Not Found - no oem actions for this manager", "", errhdrs)
+        else:
+            pass
+            # no errors found in frontend - backend will verify that the actionid is ok
+
+        # if here we have a valid request 
+        # send request to backend
+        self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: called backend.doOemManagerAction. actionId: {}".format(actionid))
+        rc,statusCode,errMsg, resp=self.rdr.backend.managers.doOemManagerAction(managerid, actionid, rdata)
+
+        # generate headers xg9 not sure if special headers are returned?
+        hdrs = self.hdrs.rfRespHeaders(request)
+
+        # xg99 not sure what idrac returns, I'm returning empty string data here
+        if( rc==0):
+            statusCode=204
+            return(0, statusCode, errMsg, "", hdrs)
+        else:
+            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rc))
+            return(rc,500, "ERROR executing backend reset","",hdrs)
 

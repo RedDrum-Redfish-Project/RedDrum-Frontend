@@ -22,6 +22,11 @@ class RfSystemsResource():
         self.hdrs=RfAddHeaders(rfr)
         self.staticProperties=["Name","Description","SystemType","Manufacturer","Model","SKU","SerialNumber","PartNumber","UUID"]
         self.nonVolatileProperties=[ "AssetTag","HostName","BiosVersion" ]
+        self.bootSourceVolatileProperties=["BootSourceOverrideEnabled","BootSourceOverrideMode","BootSourceOverrideTarget",
+                              "UefiTargetBootSourceOverride"]
+
+    #TODO xg99
+    #  Action "SetDefaultBootOrder"
 
     def loadResourceTemplates( self, rfr ):
         # these are very bare-bones templates but we want to be able to update the resource version or context easily
@@ -225,17 +230,19 @@ class RfSystemsResource():
         #self.staticProperties=["Name","Description","SystemType","Manufacturer","Model","SKU","SerialNumber","PartNumber","UUID"]
         #self.nonVolatileProperties=[ "AssetTag","HostName","BiosVersion" ]
         volatileProperties=[ "IndicatorLED", "PowerState"]
-        statusSubProperties=["State", "Health"]
-        bootSourceVolatileProperties=["BootSourceOverrideEnabled","BootSourceOverrideMode","BootSourceOverrideTarget",
-                              "UefiTargetBootSourceOverride"]
+        statusSubProperties=["State", "Health", "HealthRollup"]
+        #self.bootSourceVolatileProperties=["BootSourceOverrideEnabled","BootSourceOverrideMode","BootSourceOverrideTarget",
+        #                      "UefiTargetBootSourceOverride"]
         # nonVol procSummary and memSummary
         processorSummaryProps=["Count", "Model", "Status" ]
         memorySummaryProps=["TotalSystemMemoryGiB","MemoryMirroring","Status"]
 
         baseNavProperties=[ "Processors","EthernetInterfaces","SimpleStorage","Memory", "SecureBoot","Bios", "Storage"
                       "NetworkInterfaces", "LogServices" ]
+        arrayBaseNavProperties=[ "PCIeDevices", "PCIeFunctions" ]
+
         #linkNavProperties=["ManagedBy","Chassis","PoweredBy","CooledBy","EndPoints"] # xg some not supported
-        linkNavProperties=["ManagedBy","Chassis"] # xg Only managedBy and Chassis supported
+        linkNavProperties=["ManagedBy","Chassis", "PoweredBy", "CooledBy"] # xg Only managedBy and Chassis supported
 
         # assign the required properties
         responseData2["@odata.id"] = basePath + systemid
@@ -276,6 +283,18 @@ class RfSystemsResource():
                 if prop in self.systemsDb[systemid]["BaseNavigationProperties"]:
                     responseData2[prop] = { "@odata.id": basePath + systemid + "/" + prop }
 
+        # set the ARRAY-type base navigation properties:   /redfish/v1/Systems/<arrayBaseNavProp>
+        # creates URIs /redfish/v1/<sysid>/PCIeDevices/<id>, and /redfish/v1/<sysid>/PCIeFunctions/<id>" 
+        #  but the <id> here can have "/"s eg "NIC/Functions/1"
+        for prop in arrayBaseNavProperties:
+            if "ArrayBaseNavigationProperties"  in  self.systemsDb[systemid]:
+                if prop in self.systemsDb[systemid]["ArrayBaseNavigationProperties"]:
+                    arrayMembers=dict()
+                    propVal=self.systemsDb[systemid]["ArrayBaseNavigationProperties"][prop]
+                    for ii in range(0,len(prop)):
+                        memberii = { "@odata.id": basePath + systemid + "/" + prop + "/" + propVal[ii] }
+                        arrayMembers.append(memberii)
+                    responseData2[prop] = arrayMembers
 
         # build the Actions data
         if "ActionsResetAllowableValues" in self.systemsDb[systemid]:
@@ -312,6 +331,12 @@ class RfSystemsResource():
             if "Oem" not in responseData2:
                 responseData2["Oem"]={}
             responseData2["Oem"]["Dell_G5MC"] = oemData
+
+            # add Dell PowerEdge OEM data
+            if "OemDell" in self.systemsDb[systemid]:
+                if "Oem" not in responseData2:
+                    responseData2["Oem"]={}
+                responseData2["Oem"]["Dell"] = self.systems[Db][systemid]["OemDell"]
 
         # build Intel Rackscale OEM Section 
         if "OemRackScaleSystem" in self.systemsDb[systemid]:
@@ -361,7 +386,7 @@ class RfSystemsResource():
         # get the Boot complex property 
         if "BootSourceAllowableValues" in self.systemsDb[systemid]:
             bootData={ "BootSourceOverrideTarget@Redfish.AllowableValues": self.systemsDb[systemid]["BootSourceAllowableValues"] }
-            for prop in bootSourceVolatileProperties:
+            for prop in self.bootSourceVolatileProperties:
                 if prop in self.systemsDb[systemid]["BootSourceVolatileProperties"]:
                     if prop in self.systemsVolatileDict[systemid]:
                         bootData[prop]=self.systemsVolatileDict[systemid][prop]
@@ -391,6 +416,12 @@ class RfSystemsResource():
                 if prop in self.systemsDb[systemid]["MemorySummary"]:
                     memData[prop]=self.systemsDb[systemid]["MemorySummary"][prop]
             responseData2["MemorySummary"]=memData
+
+        # get the TrustedModules and HostWatchdogTimer Complex types
+        if "TrustedModules" in self.systemsDb[systemid]: # this is an array of trusted modules?
+            responseData2["TrustedModules"]=self.systemsDb[systemid]["TrustedModules"]
+        if "HostWatchdogTimer" in self.systemsDb[systemid]:
+            responseData2["HostWatchdogTimer"]=self.systemsDb[systemid]["HostWatchdogTimer"]
 
         # convert to json
         jsonRespData2=(json.dumps(responseData2,indent=4))
@@ -604,10 +635,6 @@ class RfSystemsResource():
                             if "Status" not in resp:
                                 resp["Status"]={}
                             resp["Status"][subProp] = resourceDb["Status"][subProp]
-                    else:
-                        if "Status" not in resp:
-                            resp["Status"]={}
-                        resp["Status"][subProp] = resourceDb["Status"][subProp]
         return(resp)
 
 
@@ -1029,7 +1056,13 @@ class RfSystemsResource():
         memStringProperties=["Name", "DeviceLocator", "SerialNumber","MemoryType",
                               "OperatingSpeedMhz","DataWidthBits","ErrorCorrection",
                               "BaseModuleType","CapacityMiB","BusWidthBits","Manufacturer",
-                              "PartNumber","MemoryDeviceType", "RankCount" ]
+                              "PartNumber","MemoryDeviceType", "RankCount","MemoryMedia","AllowedSpeedsMhz"
+                              "FirmwareRevision","FirmwareApiVersion","FunctionClasses","VendorID","DeviceId",
+                              "SubsystemVendorID","SubsystemDeviceID","MaxTDPMilliWatts","SecurityCapabilities",
+                              "SpareDeviceCount","MemoryLocation","VolatileRegionSizeLimitMiB","PersistentRegionSizeLimitMiB"
+                              "Regions","OperatingMemoryModes","PowerManagementPolicy","IsSpareDeviceEnabled",
+                              "IsRankSpareEnabled" ]
+        # TODO add "Metrics" collection and Actions
 
         # copy the template resource and update odata.id since it is a funct of sysid
         responseData2=dict(self.memoryEntryTemplate)
@@ -1171,7 +1204,9 @@ class RfSystemsResource():
         ethStringProperties=["Name", "UefiDevicePath", "Status", "InterfaceEnabled", "PermanentMACAddress", 
                 "MACAddress", "SpeedMbps", "AutoNeg", "FullDuplex", "MTUSize", "HostName", "FQDN", 
                 "MaxIPv6StaticAddresses", "VLAN", "IPv4Addresses", "IPv6Addresses", "IPv6StaticAddresses", 
-                "IPv6AddressPolicyTable","IPv6DefaultGateway","NameServers", "VLANs"]
+                "IPv6AddressPolicyTable","IPv6DefaultGateway","NameServers" ]
+
+        ethNavProperties=["VLANs"]
 
         # copy the template resource and update odata.id since it is a funct of sysid
         responseData2=dict(self.ethernetInterfaceEntryTemplate)
@@ -1187,6 +1222,11 @@ class RfSystemsResource():
         # get status properties
         if "Status" in thisDbEntry:
             responseData2["Status"]=thisDbEntry["Status"]
+        # get the eth Nav Properties (eg VLANs)
+        for prop in ethNavProperties:
+            if prop in thisDbEntry:
+                ethNavProp={ "@odata.id": odataId + "/" + prop }
+                responseData2[prop] = ethNavProp
 
         # convert to json
         jsonRespData2=(json.dumps(responseData2,indent=4))
