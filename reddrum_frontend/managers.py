@@ -264,14 +264,16 @@ class RfManagersResource():
         # this overrides anything that was retrieved from 
         #         volatileProperties=[ "IndicatorLED", "PowerState","DateTime","DateTimeLocalOffset"]
         if "GetDateTimeFromOS" in self.managersDb[managerid]:
-            datetimeManagerOsUtc = datetime.datetime.now(pytz.utc).replace(microsecond=0).isoformat('T')
-            datetimeOffsetManagerOsUtc="+00:00"
-            responseData2["DateTime"] = datetimeManagerOsUtc
-            responseData2["DateTimeLocalOffset"] = datetimeOffsetManagerOsUtc
+            if self.managersDb[managerid]["GetDateTimeFromOS"] is True:
+                datetimeManagerOsUtc = datetime.datetime.now(pytz.utc).replace(microsecond=0).isoformat('T')
+                datetimeOffsetManagerOsUtc="+00:00"
+                responseData2["DateTime"] = datetimeManagerOsUtc
+                responseData2["DateTimeLocalOffset"] = datetimeOffsetManagerOsUtc
 
         # check if we are constructing manager/UUID from the ServiceRoot UUID
-        if "GetUuidFromServiceRoot" is True:
-            responseData2["UUID"] = self.rfr.root.resData["UUID"]
+        if "GetUuidFromServiceRoot" in self.managersDb[managerid]:
+            if self.managersDb[managerid]["GetUuidFromServiceRoot"] is True:
+                responseData2["UUID"] = self.rfr.root.resData["UUID"]
 
         # check if we are constructing manager/ServiceEntryPointUUID from the UUID in ServiceRoot
         #    this overrides anything that was retrieved from self.staticProperties=["Name", ... "ServiceEntryPointUUID", "UUID", "Model" ]
