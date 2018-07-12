@@ -145,6 +145,16 @@ class RfEventService():
         for eventSubscription in self.subscriptionsDb:
             self.subscriptionsDict[eventSubscription]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
         
+
+    # Stub response for unimplemented API's
+    def stubResponse(self):
+        rc=1
+        statusCode=501
+        errString="Not Implemented--Work In Progress"
+        resp=""
+        hdrs={}
+        return(rc,statusCode,errString,resp,hdrs)
+
             
     # GET EventService
     def getEventServiceResource(self,request):
@@ -197,7 +207,7 @@ class RfEventService():
 ### for PATCH/POST/ETC ###
 
     # POST Events
-    # POST to Events collection  (add user)
+    # POST to Events collection  (add subscription)
     def postEventsResource(self,request, postData):
         # generate headers for 4xx error messages
         errhdrs = self.hdrs.rfRespHeaders(request )
