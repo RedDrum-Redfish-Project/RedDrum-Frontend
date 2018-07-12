@@ -289,16 +289,17 @@ def rdStart_RedDrum_Flask_app(rdr):
         return(resp,statusCode,hdrs)
 
     # ------------------------------------------------------------
-    # Event Service/ EventSubscriptionCollection APIs
+    # Event Service/ Subscriptions APIs
 
-    # Get EventSubscriptionCollection
-    # GET /redfish/v1/EventService/EventSubscriptionCollection -- get EventSubscription collection
+    # Get Subscriptions
+    # GET /redfish/v1/EventService/Subscriptions -- get Subscription collection
     #    -auth, json
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/EventService/Subscriptions", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetEventSubscriptionCollection():
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionCollectionResource(request)
+    def rfGetSubscriptions():
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsResource(request)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -309,14 +310,15 @@ def rdStart_RedDrum_Flask_app(rdr):
 #oPATCH is Prvilige ConfigureManager
 #Review privilges in the spec
 #Look at SessionService for headers
-    # Get EventSubscription Entry
-    # GET /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>  -- get EventSubscription entry
+    # Get Subscription Entry
+    # GET /redfish/v1/EventService/Subscriptions/<subscriptionId>  -- get Subscription entry
     #    -auth, json
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetEventSubscriptionCollectionEntry(eventSubscriptionId):
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionCollectionEntry(request, eventSubscriptionId)
+    def rfGetSubscriptionsEntry(subscriptionId):
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsEntry(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -330,50 +332,54 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureUsers"]])
     def rfPatchEventService():     
         rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # POST, PUT  eventSubscriptionId-- return 405 and proper allow header for POST an PUT of a eventSubscriptionId
-    # POST /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>
-    # PUT  /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['POST','PUT'])
-    def rfPostPutEventSubscriptionEntry405handler(eventSubscriptionId):     
+    # POST to Event Subscriptions -- return 405 and proper allow header for POST of a subscriptionId
+    # POST /redfish/v1/EventService/Subscriptions
+    @app.route("/redfish/v1/EventService/Subscriptions", methods=['POST'])
+    def rfPostPutSubscriptionEntry405handler(subscriptionId):     
         #rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventSubscriptionEntry(request, eventSubscriptionId)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionEntry(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # Delete EventSubscription -- delete an eventSubscription
-    # DELETE /redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId> 
+    # Delete Subscription -- delete an subscription
+    # DELETE /redfish/v1/EventService/Subscriptions/<subscriptionId> 
     #   -auth,  
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['DELETE'])
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['DELETE'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
-    def rfDeleteEventSubscription(eventSubscriptionId):
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteEventSubscription(request, eventSubscriptionId)
+    def rfDeleteSubscription(subscriptionId):
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteSubscriptionEntry(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
-    # Patch EventSubscription  -- update a EventSubscription entry -- patch 
-    # PATCH /redfish/v1/EventService/EventSubscriptions/<eventSubscriptionId>
-    #    -auth, write to a property in the EventSubscription
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<eventSubscriptionId>", methods=['PATCH'])
+    # Patch Subscription  -- update a Subscription entry -- patch 
+    # PATCH /redfish/v1/EventService/Subscriptions/<subscriptionId>
+    #    -auth, write to a property in the Subscription
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['PATCH'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
-    def rfPatchEventSubscriptionEntry(eventSubscriptionId):     
+    def rfPatchSubscriptionEntry(subscriptionId):     
         rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventSubscriptionEntry(request, eventSubscriptionId, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchSubscriptionEntry(request, subscriptionId, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
     # POST, PUT  test event
-    # POST /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
-    # PUT  /redfish/v1/EventService/EventSubscriptionCollection/<testEvent>
-    @app.route("/redfish/v1/EventService/EventSubscriptionCollection/<testEventId>", methods=['POST','PUT'])
-    def rfPostPutEventTestEntry405handler(eventSubscriptionId):     
+    # POST /redfish/v1/EventService/Subscriptions/<testEvent>
+    # PUT  /redfish/v1/EventService/Subscriptions/<testEvent>
+    @app.route("/redfish/v1/EventService/Subscriptions/<testEventId>", methods=['POST','PUT'])
+    def rfPostPutEventTestEntry405handler(subscriptionId):     
         #rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventTestEntry(request, eventSubscriptionId)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventTestEntry(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
