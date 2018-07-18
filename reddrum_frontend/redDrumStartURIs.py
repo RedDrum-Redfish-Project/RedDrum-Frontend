@@ -299,7 +299,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptions():
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsResource(request)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -318,7 +318,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptionsEntry(subscriptionId):
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsEntry(request, subscriptionId)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -333,7 +333,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfPatchEventService():     
         rdata=request.get_json(cache=True)
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -343,7 +343,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfPostPutSubscriptionEntry405handler(subscriptionId):     
         #rdata=request.get_json(cache=True)
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionEntry(request, rdata)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -355,7 +355,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
     def rfDeleteSubscription(subscriptionId):
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteSubscriptionEntry(request, subscriptionId)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -368,7 +368,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfPatchSubscriptionEntry(subscriptionId):     
         rdata=request.get_json(cache=True)
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchSubscriptionEntry(request, subscriptionId, rdata)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -379,7 +379,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfPostPutEventTestEntry405handler(subscriptionId):     
         #rdata=request.get_json(cache=True)
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventTestEntry(request, subscriptionId)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse(request, subscriptionId)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
