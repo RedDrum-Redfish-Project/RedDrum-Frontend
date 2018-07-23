@@ -12,10 +12,11 @@ import string
 #from .rootData import RfRoot
 from .redfish_headers import RfAddHeaders
 from enum import Enum
+from .generateId import rfGenerateId
 
 # TODO shouldn't this be moved to the "Event" class???
 class EventType(Enum):
-    status = "StatusChange"
+    statusChange = "StatusChange"
     resourceUpdated = "ResourceUpdated"
     resourceAdded = "ResourceAdded"
     resourceRemoved= "ResourceRemoved"
@@ -172,7 +173,7 @@ class RfEventService():
         resData2["@odata.id"] = "/redfish/v1/EventService"
         resData2["Id"] = "EventService"
         resData2["Name"] = "Event Service"
-        resData2["ServiceEnabled"]  = "true"
+        resData2["ServiceEnabled"]  = True
 
         # Health
         #TODO change static entries to read from DB
@@ -185,19 +186,28 @@ class RfEventService():
         resData2["DeliveryRetryAttempts"] = self.eventServiceDb["DeliveryRetryAttempts"] #e.g. "3"
         resData2["DeliveryRetryIntervalSeconds"] = self.eventServiceDb["DeliveryRetryIntervalSeconds"] #e.g. "60"
 
-        # Event Types
+        # Event Types #TODO Enum?
         resData2["EventTypesForSubscription"]  = ["StatusChange", "ResourceAdded", "ResourceUpdated", "ResourceRemoved", "Alert"]
             
         # Subscriptions
         resData2["Subscriptions"] = { "@odata.id": "/redfish/v1/EventService/Subscriptions" }
 
+        # Action (SubmitTestEvent)
+        # odata.context?
+        # etc?
+
         # create the response json data and return
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
 
+
 ### Generate each subscription with ids example for POST ###
 #SessionService/postSessionResource
 #rfGenerateId generateId do not use S or A
+
+# Questions:
+# Is service / object patchable/puttable/etc
+# How indicated patchable/puttable properties
 
 ### for PATCH/POST/ETC ###
 # check mockups on dmtf to see things like how numbers are generated for subscription ID
@@ -206,9 +216,67 @@ class RfEventService():
 # check values are sane, regexp, integers versus strings, etc
 ### for PATCH/POST/ETC ###
 
-    # POST Events
-    # POST to Events collection  (add subscription)
-    def postEventsResource(self,request, postData):
+    # PATCH EventService
+    def patchEventsResource(self,request, patchData):
+        # generate headers for 4xx error messages
+        errhdrs = self.hdrs.rfRespHeaders(request )
+
+        # First check only patchable properties are present
+        patchable=("DeliveryRetryAttempts","DeliveryRetryIntervalSeconds")
+
+        for prop in patchData:
+            if not prop in postables:
+                return (4, 400, "Bad Request-Invalid Post Property Received", "",errhdrs)
+
+        if( (patchData['DeliveryRetryAttempts'] is None) or (patchData['DeliveryRetryIntervalSeconds'] is None)):
+            return (4, 400, "Bad Request-No patchable properties received", "",errhdrs)
+
+        dlvRtryAttemps=None
+        dlvRtryIntrvlSecs=None
+        
+
+        ##########################################
+        # now verify that the Post data is valid #
+        ##########################################
+
+        #TODO is this an integer and bounds checking???
+        #if dlvRtryAttemps is not an integer and too big...
+        #dlvRtryIntrvlSecs is not an integer and too big...
+        # then convert the patch properties passed-in to integers
+        for key in patchData:
+            newVal=patchData[key]
+            try:
+                numVal=round(newVal)
+            except ValueError:
+                return(4,400,"invalid value","",hdrs)
+            else:
+                patchData[key]=numVal
+
+        # then verify the properties passed-in are in valid ranges
+        newDuration=self.accountServiceDb["AccountLockoutDuration"]
+        newResetAfter=self.accountServiceDb["AccountLockoutCounterResetAfter"]
+        if("DeliveryRetryAttempts" in patchData):
+            dlvRtryAttemps=patchData['DeliveryRetryAttempts']
+        if("DeliveryRetryIntervalSeconds" in patchData):
+            dlvRtryIntrvlSecs=patchData['DeliveryRetryIntervalSeconds']
+
+        # Todo what is legal values???
+        if( newDuration < newResetAfter ):
+            return(4,400,"Bad Request-Invalid value","",hdrs)
+        # if here, all values are good. Update the eventServiceDb dict
+        for key in patchData:
+            self.eventServiceDb[key]=patchData[key]
+
+        # write the data back out to the eventService database file
+        eventServiceDbJson=json.dumps(self.eventServiceDb,indent=4)
+        with open( self.eventServiceDbFilePath, 'w', encoding='utf-8') as f:
+            f.write(eventServiceDbJson)
+        return(0, 204, "", "", hdrs)
+
+
+    # POST Subscription
+    # POST to Subscription collection  (add subscription)
+    def postSubscriptionResource(self,request, postData):
         # generate headers for 4xx error messages
         errhdrs = self.hdrs.rfRespHeaders(request )
 
@@ -236,6 +304,7 @@ class RfEventService():
 
         # Next verify that the client didn't send us a property we cant write when creating the event
         # we need to fail the request if we cant handle any properties sent
+        # TODO Add httpheaders?
         postable=("Context","Protocol","EventDestination","EventTypes")
         for prop in postData:
             if not prop in postables:
@@ -249,26 +318,42 @@ class RfEventService():
         if (protocol != 'Redfish'):
             return (4, 400, "Bad Request-Only the 'Redfish' protocol is supported", "",errhdrs)
 
-        # eventDestination must be of the form (URL/URI) http:// 
+        # TODO eventDestination must be of the form (URL/URI) http:// 
+
+        #if (eventDestination != 
+
+        # https://docs.python.org/2/library/urlparse.html
+        # https://codereview.stackexchange.com/questions/19663/http-url-validating
+#        regex = re.compile(
+#    r'^(?:http|ftp)s?://' # http:// or https://
+#    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain...
+#    r'localhost|' # localhost...
+#    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # ...or ipv4
+#    r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # ...or ipv6
+#    r'(?::\d+)?' # optional port
+#    r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
 
         # eventTypes must exist in the collection Event.EventType enum
+        # TODO in reality, we only support 3 event types...
         for event in eventTypes:
             if not event in EventType.__members__:
                 return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
 
-        # TODO Context ???
+        if (!isinstance(context, basestring)
+        return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
 
         # create response header data
-        eventid=username
-        locationUri="/redfish/v1/EventService/Events/" + eventid
+        subscriptionId=rfGenerateId(leading="E",size=8)
+        locationUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId
 
-        # add the new event entry to the eventDestinationCollectionDb
-        self.eventDestinationCollectionDb[eventid]={"UserName": username, "Password": password, 
+        # TODO add correct data ; add the new subscription entry to the eventDestinationCollectionDb
+        self.eventDestinationCollectionDb[subscriptionId]={"UserName": username, "Password": password, 
                   "RoleId": roleId, "Enabled": enabled, "Deletable": True}
 
         # add the new event entry to the eventsDict
         dfltEventDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
-        self.eventsDict[eventid]=dfltEventDictEntry
+        self.eventsDict[subscriptionId]=dfltEventDictEntry
 
         # write the EventDb back out to the file
         dbFilePath=os.path.join(self.rdr.varDataPath,"db", "EventsDb.json")
@@ -277,65 +362,51 @@ class RfEventService():
             f.write(dbDictJson)
         
         # get the response data
-        rc,status,msg,respData,respHdr=self.getEventEntry(request, eventid)
+        rc,status,msg,respData,respHdr=self.getEventEntry(request, subscriptionId)
         if( rc != 0):
             #something went wrong--return 500
             return(5, 500, "Error Getting New Event Data","",{})
 
      ## Not required
         # calculate eTag
-        etagValue=self.calculateEventEtag(eventid)
+        #etagValue=self.calculateEventEtag(subscriptionId)
 
         # get the response Header with Link, and Location
+        #respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri,
+        #                             resource=self.eventEntryTemplate, strongEtag=etagValue)
         respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri,
-                                     resource=self.eventEntryTemplate, strongEtag=etagValue)
+                                     resource=self.eventEntryTemplate)
 
         #return to flask uri handler
         return(0, 201, "Created",respData,respHeaderData)
 
 
-    # PATCH EventService
-    def patchEventServiceResource(self, request, patchData):
+    # PATCH Subscription
+    def patchSubscriptionEntry(self, request, patchData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
 
         #first verify client didn't send us a property we cant patch
-        patachables=("EventLockoutThreshold", "AuthFailureLoggingThreshold",
-                     "EventLockoutDuration","EventLockoutCounterResetAfter")
+        patchables=("Context")
+
+        if("Context" in postData):
+            context=patchData['Context']
+
+        if (!isinstance(context, basestring):
+            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+
         for key in patchData:
             if( not key in patachables ):
                 return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
 
-        # then convert the patch properties passed-in to integers
-        for key in patchData:
-            newVal=patchData[key]
-            try:
-                numVal=round(newVal)
-            except ValueError:
-                return(4,400,"invalid value","",hdrs)
-            else:
-                patchData[key]=numVal
+        #TODO is locationUri null?
+        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.eventEntryTemplate)
 
-        # then verify the properties passed-in are in valid ranges
-        newDuration=self.eventServiceDb["EventLockoutDuration"]
-        newResetAfter=self.eventServiceDb["EventLockoutCounterResetAfter"]
-        if( "EventLockoutDuration" in patchData ):
-            newDuration=patchData["EventLockoutDuration"]
-        if( "EventLockoutCounterResetAfter" in patchData ):
-            newResetAfter=patchData["EventLockoutCounterResetAfter"]
-        if( newDuration < newResetAfter ):
-            return(4,400,"Bad Request-Invalid value","",hdrs)
+        #return to flask uri handler
+        return(0, 201, "Created",respData,respHeaderData)
 
-        # if here, all values are good. Update the eventServiceDb dict
-        for key in patchData:
-            self.eventServiceDb[key]=patchData[key]
-
-        # write the data back out to the eventService database file
-        eventServiceDbJson=json.dumps(self.eventServiceDb,indent=4)
-        with open( self.eventServiceDbFilePath, 'w', encoding='utf-8') as f:
-            f.write(eventServiceDbJson)
-        return(0, 204, "", "", hdrs)
-#
+       
+        #
 #    # getAccountAuthInfo(username,password)
 #    #   returns: rc, errMsgString, accountId, roleId, userPrivileges
 #    #      rc=404 if username is not in eventDestinationCollectionDb
