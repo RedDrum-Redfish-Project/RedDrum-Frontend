@@ -200,6 +200,85 @@ class RfEventService():
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
 
+    # GET EventDestinationCollection
+    # GET EventDestination Collection
+    def getEventDestinationCollectionResource(self, request):
+        hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
+                                     resource=self.EventDestinationCollection)
+        if request.method=="HEAD":
+            return(0,200,"","",hdrs)
+
+        # the routine copies a template file with the static redfish parameters
+        # then it updates the dynamic properties from the EventDestinationDb dict
+        # for EventDestinationCollection GET, we build the Members array
+
+        # copy the EventDestinationCollection template file (which has an empty EventDestination array)
+        resData2=dict(self.EventDestinationCollection)
+        count=0
+        # now walk through the entries in the EventDestinationDb and build the EventDestinationCollection Members array
+        # note that the members array is an empty array in the template
+        eventDestinationUriBase="/redfish/v1/EventService/Subscription/"
+        for eventDestinationid in self.EventDestinationDb:
+            # increment members count, and create the member for the next entry
+            count=count+1
+            memberUri=eventDestinationUriBase + eventDestinationid
+            newMember=[{"@odata.id": memberUri}]
+
+            # add the new member to the members array we are building
+            resData2["Members"] = resData2["Members"] + newMember
+        resData2["Members@odata.count"]=count
+
+        # convert to json
+        jsonRespData2=(json.dumps(resData2,indent=4))
+
+        return(0, 200, "", jsonRespData2, hdrs)
+
+    # GET subscription Entry
+    def getsubscriptionEntry(self, request, subscriptionId):
+
+        # First verify that the subscriptionId is valid
+        if subscriptionId not in self.subscriptionsDb:
+            # generate error header for 4xx errors
+            errhdrs=self.hdrs.rfRespHeaders(request)
+            return(4, 404, "Not Found", "",errhdrs)
+
+        # generate header info depending on the specific subscriptionId
+        # predefined subscriptions cannot be deleted or modified
+        #     self.subscriptionsDb[subscriptionId]={"Name": subscriptionname, "Description": subscriptionDescription, "IsPredefined": idPredefined, 
+        #                       "AssignedPrivileges": privileges }
+        if self.subscriptionsDb[subscriptionId]["IsPredefined"] is True:
+            # pre-defined subscriptions cannot be deleted or modified
+            allowMethods="Get"
+        else:
+            allowMethods=["HEAD","GET","PATCH","DELETE"],
+        respHdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=allowMethods,
+                                     resource=self.subscriptionEntryTemplate)
+        if request.method=="HEAD":
+            return(0,200,"","",respHdrs)
+
+        # copy the template subscriptionEntry resource
+        resData2=dict(self.subscriptionEntryTemplate)
+
+        # now overwrite the dynamic data from the subscriptionsDb 
+        subscriptionEntryUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId
+        resData2["@odata.id"]=subscriptionEntryUri
+        resData2["Id"]=subscriptionId
+        resData2["Name"]=self.subscriptionsDb[subscriptionId]["Name"]
+        resData2["Description"]=self.subscriptionsDb[subscriptionId]["Description"]
+        resData2["IsPredefined"]=self.subscriptionsDb[subscriptionId]["IsPredefined"]
+        resData2["AssignedPrivileges"]=self.subscriptionsDb[subscriptionId]["AssignedPrivileges"]
+        if "subscriptionId" in self.subscriptionsDb[subscriptionId]:
+            resData2["subscriptionId"]=self.subscriptionsDb[subscriptionId]["subscriptionId"]
+        else:
+            resData2["subscriptionId"]=subscriptionId
+
+        # convert to json
+        jsonResponseData=(json.dumps(resData2,indent=4))
+
+        return(0, 200, "", jsonResponseData, respHdrs)
+
+
+
 
 ### Generate each subscription with ids example for POST ###
 #SessionService/postSessionResource
