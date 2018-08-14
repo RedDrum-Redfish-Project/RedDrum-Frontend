@@ -619,8 +619,9 @@ class RfEventService():
 #    # all we have to do is verify the accountid is correct--
 #    # and then, if it is valid, delete the entry for that accountid from the eventDestinationCollectionDb and accountsDict
     def deleteAccount(self, request, accountid):
+        hdrs=self.hdrs.rfRespHeaders(request)
+        return(0, 204, "No Content","",hdrs)
 #        # generate the headers
-#        hdrs=self.hdrs.rfRespHeaders(request)
 #
 #        # First, verify that the accountid is valid, 
 #        if accountid not in self.eventDestinationCollectionDb:
