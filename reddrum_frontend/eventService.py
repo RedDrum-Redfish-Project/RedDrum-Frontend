@@ -31,7 +31,6 @@ class RfEventService():
         self.loadResourceTemplates(rdr )
         self.loadEventServiceDatabaseFiles(rdr )
         self.initializeSubscriptionsDict(rdr)
-
         self.hdrs=RfAddHeaders(rdr)
 
     def loadResourceTemplates( self, rdr ):
@@ -202,7 +201,7 @@ class RfEventService():
 
     # GET EventDestinationCollection
     # GET EventDestination Collection
-    def getEventDestinationCollectionResource(self, request):
+    def getEventSubscriptionsResource(self, request):
         hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
                                      resource=self.EventDestinationCollection)
         if request.method=="HEAD":
@@ -234,7 +233,7 @@ class RfEventService():
         return(0, 200, "", jsonRespData2, hdrs)
 
     # GET subscription Entry
-    def getsubscriptionEntry(self, request, subscriptionId):
+    def getSubscriptionEntry(self, request, subscriptionId):
 
         # First verify that the subscriptionId is valid
         if subscriptionId not in self.subscriptionsDb:
@@ -296,7 +295,7 @@ class RfEventService():
 ### for PATCH/POST/ETC ###
 
     # PATCH EventService
-    def patchEventsResource(self,request, patchData):
+    def patchEventServiceResource(self,request, patchData):
         # generate headers for 4xx error messages
         errhdrs = self.hdrs.rfRespHeaders(request )
 
@@ -419,8 +418,8 @@ class RfEventService():
             if not event in EventType.__members__:
                 return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
 
-        if (!isinstance(context, basestring)
-        return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+        if not isinstance(context, basestring):
+            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
 
         # create response header data
         subscriptionId=rfGenerateId(leading="E",size=8)
@@ -471,7 +470,7 @@ class RfEventService():
         if("Context" in postData):
             context=patchData['Context']
 
-        if (!isinstance(context, basestring):
+        if not isinstance(context, basestring):
             return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
 
         for key in patchData:
@@ -604,11 +603,11 @@ class RfEventService():
 #
 #
 #
-#    # DELETE Account
+# DELETE Account
 #    # delete the Account
 #    # all we have to do is verify the accountid is correct--
 #    # and then, if it is valid, delete the entry for that accountid from the eventDestinationCollectionDb and accountsDict
-#    def deleteAccount(self, request, accountid):
+    def deleteAccount(self, request, accountid):
 #        # generate the headers
 #        hdrs=self.hdrs.rfRespHeaders(request)
 #
