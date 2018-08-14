@@ -129,6 +129,18 @@ class RfEventService():
             os.remove(dbFilePath)
         # return path and data
         return(clearedDb)
+# Implementing 
+# Redfish.required is only for standard
+# Intel RSD may have additional required may have other types of requirement
+# Intel RSD is proprietary but eventually back into RFStandard
+# Concept of profiles describe additional requirements for a particular use-case
+# Example is OCP: HW Spec map to RF Property/Resources
+# RFImplementation - Profiles/Text in a spec
+
+# Annotations in payloads; 
+# Odata whitepaper spec
+# Property @ is an annotation
+# Redfish Service Validator
 
 #TODO add properties for Subscription retry
     def initializeSubscriptionsDict(self,rdr):
@@ -199,7 +211,6 @@ class RfEventService():
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
 
-    # GET EventDestinationCollection
     # GET EventDestination Collection
     def getEventSubscriptionsResource(self, request):
         hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
@@ -217,7 +228,7 @@ class RfEventService():
         # now walk through the entries in the EventDestinationDb and build the EventDestinationCollection Members array
         # note that the members array is an empty array in the template
         eventDestinationUriBase="/redfish/v1/EventService/Subscription/"
-        for eventDestinationid in self.EventDestinationDb:
+        for eventDestinationid in self.subscriptionsDb:
             # increment members count, and create the member for the next entry
             count=count+1
             memberUri=eventDestinationUriBase + eventDestinationid
