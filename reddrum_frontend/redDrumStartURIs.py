@@ -317,7 +317,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptionsEntry(subscriptionId):
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsEntry(request, subscriptionId)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
@@ -342,7 +342,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @app.route("/redfish/v1/EventService/Subscriptions", methods=['POST'])
     def rfPostPutSubscriptionEntry405handler(subscriptionId):     
         #rdata=request.get_json(cache=True)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionEntry(request, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionResource(request, rdata)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
