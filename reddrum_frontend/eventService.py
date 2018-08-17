@@ -155,6 +155,7 @@ class RfEventService():
         #create the initial state of the eventDestinationCollectionDict from the eventDestinationCollectionDb
         #for subscription in eventSubscriptionDb:
         for eventSubscription in self.subscriptionsDb:
+        #Change properties that reflect evenSubscription resources
             self.subscriptionsDict[eventSubscription]={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
         
 
@@ -214,7 +215,7 @@ class RfEventService():
     # GET EventDestination Collection
     def getEventSubscriptionsResource(self, request):
         hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
-                                     resource=self.EventDestinationCollection)
+                                     resource=self.subscriptionsTemplate)
         if request.method=="HEAD":
             return(0,200,"","",hdrs)
 
@@ -223,11 +224,11 @@ class RfEventService():
         # for EventDestinationCollection GET, we build the Members array
 
         # copy the EventDestinationCollection template file (which has an empty EventDestination array)
-        resData2=dict(self.EventDestinationCollection)
+        resData2=dict(self.subscriptionsTemplate)
         count=0
         # now walk through the entries in the EventDestinationDb and build the EventDestinationCollection Members array
         # note that the members array is an empty array in the template
-        eventDestinationUriBase="/redfish/v1/EventService/Subscription/"
+        eventDestinationUriBase="/redfish/v1/EventService/Subscriptions/"
         for eventDestinationid in self.subscriptionsDb:
             # increment members count, and create the member for the next entry
             count=count+1
@@ -469,8 +470,7 @@ class RfEventService():
         #return to flask uri handler
         return(0, 201, "Created",respData,respHeaderData)
 
-
-    # PATCH Subscription
+# PATCH Subscription
     def patchSubscriptionEntry(self, request, patchData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
@@ -494,6 +494,30 @@ class RfEventService():
         #return to flask uri handler
         return(0, 201, "Created",respData,respHeaderData)
 
+ # Test Event Subscription
+    def postPutEventTestEntry(self, request, patchData):
+        # generate headers
+        hdrs = self.hdrs.rfRespHeaders(request)
+
+        #first verify client didn't send us a property we cant patch
+        patchables=("Context")
+
+        if("Context" in postData):
+            context=patchData['Context']
+
+        if not isinstance(context, basestring):
+            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+
+        for key in patchData:
+            if( not key in patachables ):
+                return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
+
+        #TODO is locationUri null?
+        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.eventEntryTemplate)
+
+        #return to flask uri handler
+        return(0, 201, "Created",respData,respHeaderData)
+   
        
         #
 #    # getAccountAuthInfo(username,password)
@@ -614,39 +638,38 @@ class RfEventService():
 #
 #
 #
-# DELETE Account
-#    # delete the Account
-#    # all we have to do is verify the accountid is correct--
-#    # and then, if it is valid, delete the entry for that accountid from the eventDestinationCollectionDb and accountsDict
-    def deleteAccount(self, request, accountid):
+# DELETE Subscription
+#    # delete the Subscription
+#    # all we have to do is verify the subscriptionid is correct--
+#    # and then, if it is valid, delete the entry for that subscriptionid from the eventDestinationCollectionDb and subscriptionsDict
+    def deleteSubscriptionEntry(self, request, subscriptionid):
         hdrs=self.hdrs.rfRespHeaders(request)
+        # generate the headers
+
+        # First, verify that the subscriptionid is valid, 
+        if subscriptionid not in self.eventDestinationCollectionDb:
+            return(4, 404, "Not Found","",hdrs)
+
+        # check if this is a deletable subscription
+        if "Deletable" in self.eventDestinationCollectionDb[subscriptionid]:
+            if self.eventDestinationCollectionDb[subscriptionid]["Deletable"] is True:
+                del self.eventDestinationCollectionDb[subscriptionid]
+            else:
+                # get allow headers
+                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
+                return(4, 405, "Method Not Allowed for this Subscription/URI","",resp405Hdrs)
+
+        # delete the subscriptionid entry from the subscriptionsDict also
+        if subscriptionid in self.subscriptionsDict:
+            del self.subscriptionsDict[subscriptionid]
+
+        # write the data back out to the eventService database file
+        eventDestinationCollectionDbJson=json.dumps(self.eventDestinationCollectionDb,indent=4)
+        filename="SubscriptionsDb.json"
+        with open( self.eventDestinationCollectionDbFilePath, 'w', encoding='utf-8') as f:
+            f.write(eventDestinationCollectionDbJson)
+
         return(0, 204, "No Content","",hdrs)
-#        # generate the headers
-#
-#        # First, verify that the accountid is valid, 
-#        if accountid not in self.eventDestinationCollectionDb:
-#            return(4, 404, "Not Found","",hdrs)
-#
-#        # check if this is a deletable account
-#        if "Deletable" in self.eventDestinationCollectionDb[accountid]:
-#            if self.eventDestinationCollectionDb[accountid]["Deletable"] is True:
-#                del self.eventDestinationCollectionDb[accountid]
-#            else:
-#                # get allow headers
-#                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
-#                return(4, 405, "Method Not Allowed for this Account/URI","",resp405Hdrs)
-#
-#        # delete the accountid entry from the accountsDict also
-#        if accountid in self.accountsDict:
-#            del self.accountsDict[accountid]
-#
-#        # write the data back out to the eventService database file
-#        eventDestinationCollectionDbJson=json.dumps(self.eventDestinationCollectionDb,indent=4)
-#        filename="AccountsDb.json"
-#        with open( self.eventDestinationCollectionDbFilePath, 'w', encoding='utf-8') as f:
-#            f.write(eventDestinationCollectionDbJson)
-#
-#        return(0, 204, "No Content","",hdrs)
 #
 #    # Patch Account
 #    # patch an Account Entry 
