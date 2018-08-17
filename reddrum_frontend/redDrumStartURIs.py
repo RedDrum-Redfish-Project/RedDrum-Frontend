@@ -293,18 +293,19 @@ def rdStart_RedDrum_Flask_app(rdr):
 
     # Get Subscriptions
     # GET /redfish/v1/EventService/Subscriptions -- get Subscription collection
+    # Privilege is "Login" or Ability to log into the service and read resources
     #    -auth, json
     @app.route("/redfish/v1/EventService/Subscriptions", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptions():
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionsResource(request)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionsResource(request)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
 #GETS for EventService will have privilege "Login"
-#dmtf github redfisht tree registeries
+#dmtf github redfish tree registeries
 #PrivilegeRegisteries
 #Entity is EventService
 #oPATCH is Prvilige ConfigureManager
@@ -316,7 +317,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['GET','HEAD'])
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSubscriptionsEntry(subscriptionId):
+    def rfGetSubscriptionEntry(subscriptionId):
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
