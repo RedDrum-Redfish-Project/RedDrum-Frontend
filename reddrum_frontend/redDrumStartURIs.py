@@ -318,8 +318,8 @@ def rdStart_RedDrum_Flask_app(rdr):
     @rfcheckHeaders(rdr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptionEntry(subscriptionId):
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -333,18 +333,18 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureUsers"]])
     def rfPatchEventService():     
         rdata=request.get_json(cache=True)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
     # POST to Event Subscriptions -- return 405 and proper allow header for POST of a subscriptionId
     # POST /redfish/v1/EventService/Subscriptions
     @app.route("/redfish/v1/EventService/Subscriptions", methods=['POST'])
-    def rfPostPutSubscriptionEntry405handler(subscriptionId):     
-        #rdata=request.get_json(cache=True)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionResource(request, rdata)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
+    def rfPostPutSubscriptionEntry405handler():     
+        rdata=request.get_json(cache=True)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionResource(request, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -378,7 +378,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     # PUT  /redfish/v1/EventService/Subscriptions/<testEvent>
     @app.route("/redfish/v1/EventService/Subscriptions/<testEventId>", methods=['POST','PUT'])
     def rfPostPutEventTestEntry405handler(subscriptionId):     
-        #rdata=request.get_json(cache=True)
+        rdata=request.get_json(cache=True)
         #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postPutEventTestEntry(request, subscriptionId)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
