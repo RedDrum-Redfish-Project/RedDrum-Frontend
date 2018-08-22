@@ -70,9 +70,9 @@ class RfEventService():
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDbFilePath,self.subscriptionsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-        # load the Roles collection  database file:     "RolesDb.json"
+        # load the Events collection database file: "EventsDb.json"
         filename="EventDestinationDb.json"
-        self.rolesDbFilePath,self.rolesDb=self.loadDatabaseFile(rdr,"db",filename) 
+        self.eventsDbFilePath,self.eventsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
     # worker function called by loadEventServiceDatabaseFiles() to load a specific database file
     # returns two positional parameters:
@@ -102,16 +102,14 @@ class RfEventService():
         # return path and data
         return(dbFilePath,dbDict)
 
+    # clear the EventService related database files
     def clearEventServiceDatabaseFiles(self, rdr ):
-        # clear the AccountService database file:      "AccountServiceDb.json"
         filename="EventServiceDb.json"
         self.eventServiceDb=self.clearDatabaseFile(rdr,"db",filename) 
 
-        # clear the Accounts collection database file: "AccountsDb.json"
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDb=self.clearDatabaseFile(rdr,"db",filename) 
 
-        # clear the Roles collection  database file:     "RolesDb.json"
         filename="EventDestinationDb.json"
         self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
 
@@ -170,7 +168,8 @@ class RfEventService():
     # GET EventService
     def getEventServiceResource(self,request):
         # generate headers
-        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.eventServiceTemplate, allow="GetPatch")
+        allowMethods=["HEAD","GET"],
+        hdrs = self.hdrs.rfRespHeaders(request, contentType="json", resource=self.eventServiceTemplate, allow=allowMethods)
 
         # Process HEAD method
         if request.method=="HEAD":
@@ -187,7 +186,6 @@ class RfEventService():
 
         # Health
         #TODO change static entries to read from DB
-
         resData2["Status"]  = dict()
         resData2["Status"]["Health"] = self.eventServiceDb["Status"]["Health"] #e.g. "OK"
         resData2["Status"]["State"] = self.eventServiceDb["Status"]["State"] #e.g. "Enabled"
@@ -197,13 +195,15 @@ class RfEventService():
         resData2["DeliveryRetryIntervalSeconds"] = self.eventServiceDb["DeliveryRetryIntervalSeconds"] #e.g. "60"
 
         # Event Types; Currently only "Alert" is supported for now
-        resData2["EventTypesForSubscription"]  = [EventType.alert]
+        # TODO write custom JSON Encoder but use string for now
+        resData2["EventTypesForSubscription"]  = ["Alert"]
             
         # Subscriptions
         resData2["Subscriptions"] = { "@odata.id": "/redfish/v1/EventService/Subscriptions" }
 
         # Action (SubmitTestEvent)
-
+        resData2["Actions"] = self.eventServiceDb["Actions"] #e.g. "60"
+        # resData2["Actions"] = {"SubmitTestEvent"}
         # create the response json data and return
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
@@ -246,8 +246,8 @@ class RfEventService():
         # First verify that the subscriptionId is valid
         if subscriptionId not in self.subscriptionsDb:
             # generate error header for 4xx errors
-            errhdrs=self.hdrs.rfRespHeaders(request)
-            return(4, 404, "Not Found", "",errhdrs)
+            hdrs=self.hdrs.rfRespHeaders(request)
+            return(4, 404, "Not Found", "",hdrs)
 
         #TODO how to generate headers
         # generate header info depending on the specific subscriptionId
@@ -485,7 +485,7 @@ class RfEventService():
             context=patchData['Context']
 
         if not isinstance(context, basestring):
-            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+            return (4, 400, "Bad Request-Context must be a string", "",hdrs)
 
         for key in patchData:
             if( not key in patachables ):
@@ -493,33 +493,72 @@ class RfEventService():
 
         #TODO is locationUri null?
         respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.subscriptionTemplate)
+
+        # get the response data
+        rc,status,msg,respData,respHdr=self.getSubscriptionEntry(request, subscriptionId)
+        if( rc != 0):
+            #something went wrong--return 500
+            return(5, 500, "Error Getting New Event Data","",{})
 
         #return to flask uri handler
         return(0, 201, "Created",respData,respHeaderData)
 
  # Test Event Subscription
-    def postPutEventTestEntry(self, request, patchData):
+    def sendTestEvent(self, request, postData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
+        #postables=("EventType","EventId", "EventTimestamp", "Severity", "Message", "MessageId", "MessageArgs", "OriginOfCondition")
+        postables=("EventType","EventId")
 
-        #first verify client didn't send us a property we cant patch
-        patchables=("Context")
+        if not all (key in postData for key in postables):
+            return (4, 400, "Bad Request-Invalid Object Post Property Sent", "", hdrs)
 
-        if("Context" in postData):
-            context=patchData['Context']
+        if("EventType" in postData):
+            eventType=postData['EventType']
 
-        if not isinstance(context, basestring):
-            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+        if("EventId" in postData):
+            eventId=postData['EventId']
 
-        for key in patchData:
-            if( not key in patachables ):
-                return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
+        if("EventTimestamp" in postData):
+            eventTimestamp=postData['EventTimestamp']
 
-        #TODO is locationUri null?
-        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.subscriptionTemplate)
+        if("Severity" in postData):
+            severity=postData['Severity']
+
+        if("Message" in postData):
+            message=postData['Message']
+
+        if("MessageId" in postData):
+            messageId=postData['MessageId']
+
+        if("MessageArgs" in postData):
+            messageArgs=postData['MessageArgs']
+
+        if("OriginOfCondition" in postData):
+            originOfCondition=postData['OriginOfCondition']
+
+        stringProperties=("Severity", "Message", "MessageId", "MessageArgs", "OriginOfCondition")
+        for key in stringProperties:
+            if not isinstance(key, str):
+                return (4, 400, "Bad Request-Property must be a string", "",hdrs)
+
+        # create response header data
+        # TODO
+        # add the new event entry to the eventsDict
+        #dfltEventDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
+        eventId=len(self.eventsDb) + 1
+        self.eventsDb[eventId]=postData
+        locationUri="/redfish/v1/EventService/Event/" + str(eventId)
+
+        #respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.subscriptionTemplate)
+        respHeaderData={"Location": locationUri}
+
+
+        #TODO fire off event using redfish library or http library
 
         #return to flask uri handler
-        return(0, 201, "Created",respData,respHeaderData)
+        #return(0, 201, "Created",respData,respHeaderData)
+        return(0, 201, "Created","",respHeaderData)
    
        
         #
