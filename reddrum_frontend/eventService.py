@@ -321,8 +321,8 @@ class RfEventService():
         if( (patchData['DeliveryRetryAttempts'] is None) or (patchData['DeliveryRetryIntervalSeconds'] is None)):
             return (4, 400, "Bad Request-No patchable properties received", "",errhdrs)
 
-        dlvRtryAttemps=None
-        dlvRtryIntrvlSecs=None
+        dlvyRtryAttempts=None
+        dlvyRtryIntvlSecs=None
         
 
         ##########################################
@@ -330,8 +330,8 @@ class RfEventService():
         ##########################################
 
         #TODO is this an integer and bounds checking???
-        #if dlvRtryAttemps is not an integer and too big...
-        #dlvRtryIntrvlSecs is not an integer and too big...
+        #if dlvyRtryAttempts is not an integer and too big...
+        #dlvyRtryIntvlSecs is not an integer and too big...
         # then convert the patch properties passed-in to integers
         for key in patchData:
             newVal=patchData[key]
@@ -343,12 +343,12 @@ class RfEventService():
                 patchData[key]=numVal
 
         # then verify the properties passed-in are in valid ranges
-        newDuration=self.accountServiceDb["AccountLockoutDuration"]
-        newResetAfter=self.accountServiceDb["AccountLockoutCounterResetAfter"]
+        #newDuration=self.accountServiceDb["AccountLockoutDuration"]
+        #newResetAfter=self.accountServiceDb["AccountLockoutCounterResetAfter"]
         if("DeliveryRetryAttempts" in patchData):
-            dlvRtryAttemps=patchData['DeliveryRetryAttempts']
+            dlvyRtryAttempts=patchData['DeliveryRetryAttempts']
         if("DeliveryRetryIntervalSeconds" in patchData):
-            dlvRtryIntrvlSecs=patchData['DeliveryRetryIntervalSeconds']
+            dlvyRtryIntvlSecs=patchData['DeliveryRetryIntervalSeconds']
 
         # Todo what is legal values???
         if( newDuration < newResetAfter ):
