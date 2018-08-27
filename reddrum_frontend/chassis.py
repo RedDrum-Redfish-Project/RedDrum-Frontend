@@ -9,7 +9,6 @@ import sys
 import datetime
 import copy
 from  .redfish_headers import RfAddHeaders
-from  .oemUtils import Dell_Dss9000_OemUtils
 
 
 class RfChassisResource():       
@@ -17,14 +16,15 @@ class RfChassisResource():
     # Note that this resource was created in serviceRoot for the Chassis Resource.
     def __init__(self,rfr ):
         self.rfr=rfr
-        self.dellG5OemUtils=Dell_Dss9000_OemUtils()
+        #xggx self.dellG5OemUtils=Dell_Dss9000_OemUtils(rfr)
         self.chassisDbDiscovered=None
         self.loadResourceTemplates(rfr )
         self.loadChassisDbFiles(rfr)
         sys.stdout.flush()
         self.hdrs=RfAddHeaders(rfr)
 
-        self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber"]
+        self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber",
+             "Location" ]
         self.nonVolatileProperties=[ "AssetTag" ]
         self.temperatureStaticProperties=["Name", "SensorNumber", "UpperThresholdNonCritical", "UpperThresholdCritical", 
              "UpperThresholdFatal", "LowerThresholdNonCritical", "LowerThresholdCritical", "LowerThresholdFatal", 
@@ -40,8 +40,10 @@ class RfChassisResource():
              "MinReadingRange", "MaxReadingRange", "PhysicalContext"  ]
         self.voltagesNonVolatileProperties=[]
         self.powerControlStaticProperties=["Name","PhysicalContext" ]
-        self.powerControlPowerLimitNonVolatileProperties=["LimitInWatts", "LimitException" ]
+        self.powerControlPowerLimitNonVolatileProperties=["LimitInWatts", "LimitException", "CorrectionInMs" ]
         self.powerControlVolatileProperties=[ "PowerConsumedWatts" ]
+        self.powerControlNonVolatileProperties=[ "PowerAllocatedWatts","PowerRequestedWatts","PowerCapacityWatts",
+            "PowerAvailableWatts","PowerMetrics" ]
         self.psusStaticProperties=["Name"]
         self.psusNonVolatileProperties=["PowerSupplyType", "LineInputVoltageType", "PowerCapacityWatts", 
             "Manufacturer", "Model","SerialNumber","FirmwareVersion", "PartNumber","SparePartNumber"  ]
@@ -253,9 +255,9 @@ class RfChassisResource():
         basePath="/redfish/v1/Chassis/"
         #self.staticProperties=["Name", "Description", "ChassisType", "Manufacturer", "Model", "SKU", "SerialNumber", "PartNumber"]
         #self.nonVolatileProperties=[ "AssetTag" ]
-        volatileProperties=[ "IndicatorLED", "PowerState"]
+        volatileProperties=[ "IndicatorLED", "PowerState", "PhysicalSecurity"]
         baseNavProperties=["LogServices", "Thermal", "Power"]
-        statusSubProperties=["State", "Health"]
+        statusSubProperties=["State", "Health", "HealthRollup"]
         linkNavProperties=["Contains", "ContainedBy", "PoweredBy", "CooledBy", "ManagedBy", "ComputerSystems", "ManagersInChassis"]
 
         # assign the required properties
@@ -334,7 +336,7 @@ class RfChassisResource():
         # build Intel Rackscale OEM Section 
         if "hasOemRackScaleLocation" in self.chassisDb[chassisid]:
             if self.chassisDb[chassisid]["hasOemRackScaleLocation"] is True:
-                locationId, parentId = self.rfr.dellG5OemUtils.rsdLocation(chassisid)
+                locationId, parentId = self.rfr.backend.oemUtils.rsdLocation(chassisid)
                 oemData = {"@odata.type": "#Intel.Oem.Chassis",
                            "Location": { "Id": locationId } }
                 if parentId is not None:
@@ -551,10 +553,6 @@ class RfChassisResource():
                             if "Status" not in resp:
                                 resp["Status"]={}
                             resp["Status"][subProp] = resourceDb["Status"][subProp]
-                    else:
-                        if "Status" not in resp:
-                            resp["Status"]={}
-                        resp["Status"][subProp] = resourceDb["Status"][subProp]
         return(resp)
 
 
@@ -937,12 +935,12 @@ class RfChassisResource():
                         relatedItemMembers.append(relatedItemMember)
                     if "G5Blocks" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.dellG5OemUtils.isBlock(chas) is True:
+                            if self.rfr.backend.oemUtils.isBlock(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                     if "G5PowerBays" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.dellG5OemUtils.isPowerBay(chas) is True:
+                            if self.rfr.backend.oemUtils.isPowerBay(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                         
@@ -992,6 +990,11 @@ class RfChassisResource():
                     if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
                         sensorData[prop] = self.powerControlDb[chassisid]["Id"][powerControlId][prop]
 
+                # add the base powerControl NonVolatile Properties that this service uses
+                for prop in self.powerControlNonVolatileProperties:
+                    if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
+                        sensorData[prop] = self.powerControlDb[chassisid]["Id"][powerControlId][prop]
+
                 # add the PowerLimit Non-volatile Properties that this service uses
                 for prop in self.powerControlPowerLimitNonVolatileProperties:
                     if prop in self.powerControlDb[chassisid]["Id"][powerControlId]:
@@ -1011,6 +1014,22 @@ class RfChassisResource():
                               self.powerControlDb[chassisid], self.powerControlVolatileDict[chassisid])
                 for prop in statusProps:
                     sensorData[prop] = statusProps[prop]
+
+                # add the related items properties
+                if "AddRelatedItems" in self.powerControlDb[chassisid]["Id"][powerControlId]:
+                    relatedItemMembers=list()
+                    if "Chassis" in self.powerControlDb[chassisid]["Id"][powerControlId]["AddRelatedItems"]:
+                        relatedItemMember = {"@odata.id": basePath + chassisid }
+                        relatedItemMembers.append(relatedItemMember)
+                    if "System" in self.powerControlDb[chassisid]["Id"][powerControlId]["AddRelatedItems"]:
+                        if "ComputerSystems" in self.chassisDb[chassisid]:
+                            sysid=self.chassisDb[chassisid]["ComputerSystems"]
+                            if( len(sysid) > 0 ):
+                                relatedItemMember = {"@odata.id": systemsBasePath + sysid[0] }
+                                relatedItemMembers.append(relatedItemMember)
+                    # add the RelatedItem Property to the response
+                    if( len(relatedItemMembers) > 0):
+                        sensorData["RelatedItem"] = relatedItemMembers
 
                 powerControlArray.append(sensorData)
 
@@ -1183,6 +1202,8 @@ class RfChassisResource():
         rc=self.rfr.backend.chassis.doChassisReset(chassisid,resetType)
         if( rc==0):
             return(0, 204, "SUCCESS", "", hdrs)
+        elif( rc == 400):
+            return(4,400,"invalid resetType","", hdrs)
         else:
             return(rc,500, "ERROR executing doChassisReset in backend. rc={}".format(rc), "", hdrs)
 

@@ -5,6 +5,7 @@
 
 import os
 import json
+import copy
 import sys
 import datetime
 import pytz
@@ -263,14 +264,16 @@ class RfManagersResource():
         # this overrides anything that was retrieved from 
         #         volatileProperties=[ "IndicatorLED", "PowerState","DateTime","DateTimeLocalOffset"]
         if "GetDateTimeFromOS" in self.managersDb[managerid]:
-            datetimeManagerOsUtc = datetime.datetime.now(pytz.utc).replace(microsecond=0).isoformat('T')
-            datetimeOffsetManagerOsUtc="+00:00"
-            responseData2["DateTime"] = datetimeManagerOsUtc
-            responseData2["DateTimeLocalOffset"] = datetimeOffsetManagerOsUtc
+            if self.managersDb[managerid]["GetDateTimeFromOS"] is True:
+                datetimeManagerOsUtc = datetime.datetime.now(pytz.utc).replace(microsecond=0).isoformat('T')
+                datetimeOffsetManagerOsUtc="+00:00"
+                responseData2["DateTime"] = datetimeManagerOsUtc
+                responseData2["DateTimeLocalOffset"] = datetimeOffsetManagerOsUtc
 
         # check if we are constructing manager/UUID from the ServiceRoot UUID
-        if "GetUuidFromServiceRoot" is True:
-            responseData2["UUID"] = self.rfr.root.resData["UUID"]
+        if "GetUuidFromServiceRoot" in self.managersDb[managerid]:
+            if self.managersDb[managerid]["GetUuidFromServiceRoot"] is True:
+                responseData2["UUID"] = self.rfr.root.resData["UUID"]
 
         # check if we are constructing manager/ServiceEntryPointUUID from the UUID in ServiceRoot
         #    this overrides anything that was retrieved from self.staticProperties=["Name", ... "ServiceEntryPointUUID", "UUID", "Model" ]
@@ -300,6 +303,25 @@ class RfManagersResource():
             if "Actions" not in responseData2:
                 responseData2["Actions"]={}
             responseData2["Actions"]["#Manager.Reset"]= resetAction
+
+        # Build the Oem Actions
+        if "AddOemActions" in self.managersDb[managerid] and "Actions" in self.managersDb[managerid]:
+            oemActions=dict()
+            if "Oem" in self.managersDb[managerid]["Actions"]:
+                for oemaction in self.managersDb[managerid]["Actions"]["Oem"]:
+                    #make a copy as we will remove some properties
+                    thisAction=copy.deepcopy(self.managersDb[managerid]["Actions"]["Oem"][oemaction])
+                    if "target" in thisAction and "targetId" in thisAction:
+                        thisAction["target"] = basePath + managerid + "/Actions/Oem/" + thisAction["targetId"]
+                        del thisAction["targetPath"]
+                        del thisAction["targetId"]
+                    oemActions[oemaction]=thisAction
+ 
+            if "Actions" not in responseData2:
+                responseData2["Actions"]={}
+                if "Oem" not in responseData2["Actions"]:
+                    responseData2["Actions"]["Oem"]={}
+            responseData2["Actions"]["Oem"] = oemActions
 
         # build Dell OEM Section 
         if "OemDellG5MCMgrInfo" in self.managersDb[managerid]:
@@ -343,6 +365,7 @@ class RfManagersResource():
                         members.append(newMember)
                     # now add the members array to the response data
                     responseData2["Links"][navProp] = members
+
 
         # convert to json
         jsonRespData2=(json.dumps(responseData2,indent=4))
@@ -604,10 +627,11 @@ class RfManagersResource():
         self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: called backend.doManagerReset()ResetType: {}".format(resetValue))
         rc=self.rdr.backend.managers.doManagerReset(managerid,resetValue)
 
+
         if( rc==0):
             return(0, 204, "", "", hdrs)
         else:
-            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rd))
+            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rc))
             return(rc,500, "ERROR executing backend reset","",hdrs)
 
         # DONE
@@ -642,7 +666,8 @@ class RfManagersResource():
 
         # setup some variables to build response from
         basePath="/redfish/v1/Managers/"
-        networkProtocolProperties=["Name","HTTP","HTTPS","SSH", "NTP","HostName","FQDN","Telnet","Status"]
+        networkProtocolProperties=["Name","HTTP","HTTPS","SSH", "NTP","HostName","FQDN","Telnet","Status"
+                                   "VirtualMedia","SSDP","IPMI","KVMIP" ]
 
         # assign the required properties
         responseData2["@odata.id"] = basePath + mgrid + "/NetworkProtocol"
@@ -730,7 +755,7 @@ class RfManagersResource():
 
     # GET Manager Ethernet Interface Entry
     def getManagerEthernetInterfaceEntry(self, request, mgrid, ethid):
-        # verify that the systemid and procId is valid
+        # verify that the systemid and procId is valid:
         if mgrid not in self.managersDb:
             notFound=True
         elif "BaseNavigationProperties"  not in  self.managersDb[mgrid]:
@@ -767,8 +792,11 @@ class RfManagersResource():
         if request.method=="HEAD":
             return(0,200,"","",respHdrs)
 
-        mgrEthernetProperties=["Name","InterfaceEnabled","FQDN","FullDuplex", "AutoNeg", "SpeedMbps", 
-                               "MACAddress", "PermanentMACAddress", "HostName", "MTUSize" ]
+        mgrEthernetProperties=["Name", "UefiDevicePath", "Status", "InterfaceEnabled", "PermanentMACAddress",
+                "MACAddress", "SpeedMbps", "AutoNeg", "FullDuplex", "MTUSize", "HostName", "FQDN",
+                "MaxIPv6StaticAddresses", "VLAN", "IPv4Addresses", "IPv6Addresses", "IPv6StaticAddresses",
+                "IPv6AddressPolicyTable","IPv6DefaultGateway","NameServers", "VLANs"]
+
         mgrIpv4SubProperties=["Gateway","AddressOrigin", "SubnetMask", "Address"]
 
         # xg99 add IPV6 properties
@@ -801,4 +829,40 @@ class RfManagersResource():
 
         return(0, 200, "", jsonRespData2, respHdrs)
 
+
+    # Oem Manager Action  
+    def oemManagerAction(self, request, managerid, actionid, rdata):
+        # verify that the managerid is valid:
+        errhdrs=self.hdrs.rfRespHeaders(request)
+        if managerid not in self.managersDb:
+            return(4, 404, "Not Found - managerId not found", "", errhdrs)
+        elif "AddOemActions" not in  self.managersDb[managerid] and self.managersDb[managerid] is not True:
+            return(4, 404, "Not Found - OEM Actions not supported by manager", "", errhdrs)
+        elif "Actions" not in self.managersDb[managerid] or "Oem" not in self.managersDb[managerid]["Actions"]:
+            # need to update the manager db
+            rc=self.updateResourceDbsFromBackend(managerid)
+            if( rc != 0):
+                self.rfr.logMsg("ERROR","getManagerEntry(): updateResourceDbsFromBackend() returned error ")
+                return(9, 500, "Internal Error", "", errhdrs)
+            if "Actions" not in self.managersDb[managerid] or "Oem" not in self.managersDb[managerid]["Actions"]:
+                return(4, 404, "Not Found - no oem actions for this manager", "", errhdrs)
+        else:
+            pass
+            # no errors found in frontend - backend will verify that the actionid is ok
+
+        # if here we have a valid request 
+        # send request to backend
+        self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: called backend.doOemManagerAction. actionId: {}".format(actionid))
+        rc,statusCode,errMsg, resp=self.rdr.backend.managers.doOemManagerAction(managerid, actionid, rdata)
+
+        # generate headers xg9 not sure if special headers are returned?
+        hdrs = self.hdrs.rfRespHeaders(request)
+
+        # xg99 not sure what idrac returns, I'm returning empty string data here
+        if( rc==0):
+            statusCode=204
+            return(0, statusCode, errMsg, "", hdrs)
+        else:
+            self.rdr.logMsg("DEBUG","--------ManagersFrontEnd: got err sending Reset to backend. rc: {}".format(rc))
+            return(rc,500, "ERROR executing backend reset","",hdrs)
 
