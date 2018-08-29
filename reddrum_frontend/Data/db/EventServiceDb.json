@@ -7,5 +7,16 @@
         "Health" : "OK",
         "State" : "Enabled"
     },
-    "Actions": { "#EventService.SendTestEvent": { "target": "/redfish/v1/EventService/Actions/EventService.SendTestEvent", "EventType@Redfish.AllowableValues": [ "StatusChange", "ResourceUpdated", "ResourceAdded", "ResourceRemoved", "Alert" ] } } 
+    "Actions": { 
+	    "#EventService.SendTestEvent": { 
+             	"EventType@Redfish.AllowableValues": [ 
+			"StatusChange", 
+			"ResourceUpdated", 
+			"ResourceAdded", 
+			"ResourceRemoved", 
+			"Alert" 
+		], 
+		"target": "/redfish/v1/EventService/Actions/EventService.SendTestEvent"
+	    } 
+    } 
 }
