@@ -70,9 +70,11 @@ class RfEventService():
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDbFilePath,self.subscriptionsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-        # load the Events collection database file: "EventsDb.json"
-        filename="EventDestinationDb.json"
-        self.eventsDbFilePath,self.eventsDb=self.loadDatabaseFile(rdr,"db",filename) 
+#        # load the Events collection database file: "EventsDb.json"
+#        filename="EventDestinationDb.json"
+#        self.eventsDbFilePath,self.eventsDb=self.loadDatabaseFile(rdr,"db",filename) 
+
+#TODO volitile db needed?
 
     # worker function called by loadEventServiceDatabaseFiles() to load a specific database file
     # returns two positional parameters:
@@ -187,12 +189,13 @@ class RfEventService():
         resData2["Subscriptions"] = { "@odata.id": "/redfish/v1/EventService/Subscriptions" }
 
         # Action (SubmitTestEvent)
+        #TODO properly implement Actions; Where should they be defined?
         resData2["Actions"] = self.eventServiceDb["Actions"] #e.g. "60"
-        # resData2["Actions"] = {"SubmitTestEvent"}
         # create the response json data and return
         resp=json.dumps(resData2,indent=4)
         return(0, 200, "", resp, hdrs)
 
+    #TODO do we need a separate EventSubscriptions class?
     # GET EventDestination Collection
     def getEventSubscriptionsResource(self, request):
         hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","POST"],
@@ -234,16 +237,8 @@ class RfEventService():
             hdrs=self.hdrs.rfRespHeaders(request)
             return(4, 404, "Not Found", "",hdrs)
 
-        #TODO how to generate headers
-        # generate header info depending on the specific subscriptionId
-        # predefined subscriptions cannot be deleted or modified
-        #     self.subscriptionsDb[subscriptionId]={"Name": subscriptionname, "Description": subscriptionDescription, "IsPredefined": idPredefined, 
-        #                       "AssignedPrivileges": privileges }
-#        if self.subscriptionsDb[subscriptionId]["IsPredefined"] is True:
-#            # pre-defined subscriptions cannot be deleted or modified
-#            allowMethods="Get"
-#        else:
-        allowMethods=["HEAD","GET","PATCH","DELETE"],
+        #TODO is this correct headers?
+        allowMethods=["HEAD","GET","PATCH","DELETE"], #is DELETE/PATCH allowed?
         respHdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=allowMethods,
                                      resource=self.subscriptionTemplate)
         if request.method=="HEAD":
@@ -313,9 +308,6 @@ class RfEventService():
         ##########################################
 
         #TODO is this an integer and bounds checking???
-        #if dlvyRtryAttempts is not an integer and too big...
-        #dlvyRtryIntvlSecs is not an integer and too big...
-        # then convert the patch properties passed-in to integers
         for key in patchData:
             newVal=patchData[key]
             try:
@@ -412,9 +404,6 @@ class RfEventService():
         for event in eventTypes:
             if not EventType.has_value(event):
                 return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
-            #if not event in EventType.__members__:
-            #    return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
-
         if not isinstance(context, str):
             return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
 
@@ -554,26 +543,28 @@ class RfEventService():
         # generate the headers
 
         # First, verify that the subscriptionid is valid, 
-        if subscriptionid not in self.eventDestinationCollectionDb:
+        if subscriptionid not in self.subscriptionsDb:
             return(4, 404, "Not Found","",hdrs)
 
         # check if this is a deletable subscription
-        if "Deletable" in self.eventDestinationCollectionDb[subscriptionid]:
-            if self.eventDestinationCollectionDb[subscriptionid]["Deletable"] is True:
-                del self.eventDestinationCollectionDb[subscriptionid]
-            else:
-                # get allow headers
-                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
-                return(4, 405, "Method Not Allowed for this Subscription/URI","",resp405Hdrs)
-
+#        if "Deletable" in self.subscriptionsDb[subscriptionid]:
+#            if self.subscriptionsDb[subscriptionid]["Deletable"] is True:
+#                del self.subscriptionsDb[subscriptionid]
+#            else:
+#                #TODO does this make sense?
+#                # get allow headers
+#                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
+#                return(4, 405, "Method Not Allowed for this Subscription/URI","",resp405Hdrs)
+#
 #        # delete the subscriptionid entry from the subscriptionsDict also
 #        if subscriptionid in self.subscriptionsDict:
 #            del self.subscriptionsDict[subscriptionid]
 #
         # write the data back out to the eventService database file
-        eventDestinationCollectionDbJson=json.dumps(self.eventDestinationCollectionDb,indent=4)
+        del self.subscriptionsDb[subscriptionid]
+        eventDestinationCollectionDbJson=json.dumps(self.subscriptionsDb,indent=4)
         filename="SubscriptionsDb.json"
-        with open( self.eventDestinationCollectionDbFilePath, 'w', encoding='utf-8') as f:
+        with open( self.subscriptionsDbFilePath, 'w', encoding='utf-8') as f:
             f.write(eventDestinationCollectionDbJson)
 
         return(0, 204, "No Content","",hdrs)
