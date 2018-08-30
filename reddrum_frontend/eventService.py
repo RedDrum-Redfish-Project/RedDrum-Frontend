@@ -325,7 +325,7 @@ class RfEventService():
         if("DeliveryRetryIntervalSeconds" in patchData):
             dlvyRtryIntvlSecs=patchData['DeliveryRetryIntervalSeconds']
 
-        if( dlryRtryAttempts > 5 or dlvRtryIntrvlSecs > 60):
+        if( not (0 <= dlvyRtryAttempts < 5) or not(0 <= dlvyRtryIntvlSecs < 60) ):
             return(4,400,"Bad Request-Invalid value","",hdrs)
 
         # if here, all values are good. Update the eventServiceDb dict
@@ -353,13 +353,13 @@ class RfEventService():
         # First check that client didnt' send us a property we cannot write
 
         # Check all required on create properties were sent as post data
-        if( (postData['EventDestination'] is None) or (postData['EventTypes'] is None) or (postData['Protocol'] is None ) ):
+        if( (postData['Context'] is None) or (postData['EventDestination'] is None) or (postData['EventTypes'] is None) or (postData['Protocol'] is None ) ):
             return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
 
         context=None
         protocol=None
         eventDestination=None
-        eventTypes=[]
+        eventTypes=[""]
 
         if("Context" in postData):
             context=postData['Context']
@@ -401,9 +401,12 @@ class RfEventService():
 
         # eventTypes must exist in the collection Event.EventType enum
         # TODO in reality, we only support 3 event types...
+        if not isinstance(eventTypes, list):
+            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
         for event in eventTypes:
             if not EventType.has_value(event):
                 return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
+
         if not isinstance(context, str):
             return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
 
