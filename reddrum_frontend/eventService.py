@@ -112,8 +112,8 @@ class RfEventService():
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDb=self.clearDatabaseFile(rdr,"db",filename) 
 
-        filename="EventDestinationDb.json"
-        self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
+        #filename="EventDestinationDb.json"
+        #self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
 
 #TODO look at how chassis does the clear and follow
     def clearDatabaseFile( self, rdr, subDir, filename ):
@@ -425,10 +425,9 @@ class RfEventService():
         #self.eventsDict[subscriptionId]=dfltEventDictEntry
 
         # write the EventDb back out to the file
-        dbFilePath=os.path.join(self.rdr.varDataPath,"db", "EventsDb.json")
-        dbDictJson=json.dumps(self.subscriptionsDb, indent=4)
-        with open( dbFilePath, 'w', encoding='utf-8') as f:
-            f.write(dbDictJson)
+        subscriptionsDbJson=json.dumps(self.subscriptionsDb, indent=4)
+        with open( self.subscriptionsDbFilePath, 'w', encoding='utf-8') as f:
+            f.write(subscriptionsDbJson)
         
         # get the response data
         rc,status,msg,respData,respHdr=self.getSubscriptionEntry(request, subscriptionId)
@@ -448,16 +447,20 @@ class RfEventService():
         return(0, 201, "Created",respData,respHeaderData)
 
 # PATCH Subscription
-    def patchSubscriptionEntry(self, request, patchData):
+    def patchSubscriptionEntry(self, request, subscriptionId, patchData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
+
+        # First, verify that the subscriptionIdId is valid, 
+        if subscriptionId not in self.subscriptionsDb:
+            return(4, 404, "Not Found","",hdrs)
 
         #first verify client didn't send us a property we cant patch
         # TODO complete list of patchables
         patchables=("Context")
 
         for key in patchData:
-            if( not key in patachables ):
+            if( not key in patchables ):
                 return (4, 400, "Bad Request-Invalid Patch Property Sent", "", hdrs)
 
         context=patchData["Context"]
@@ -466,18 +469,15 @@ class RfEventService():
 
         self.subscriptionsDb[subscriptionId]["Context"]=context
 
-        #TODO is locationUri null?
-        respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.subscriptionTemplate)
+        #locationUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId 
 
-        # get the response data
-        # TODO do we really need this check?
-        rc,status,msg,respData,respHdr=self.getSubscriptionEntry(request, subscriptionId)
-        if( rc != 0):
-            #something went wrong--return 500
-            return(5, 500, "Error Getting New Event Data","",{})
+        # write the EventDb back out to the file
+        subscriptionsDbJson=json.dumps(self.subscriptionsDb, indent=4)
+        with open( self.subscriptionsDbFilePath, 'w', encoding='utf-8') as f:
+            f.write(subscriptionsDbJson)
 
         #return to flask uri handler
-        return(0, 201, "Created",respData,respHeaderData)
+        return(0, 204, "No Content", "", hdrs)
 
  # Test Event Subscription
     def sendTestEvent(self, request, postData):
