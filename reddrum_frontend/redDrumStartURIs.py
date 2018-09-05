@@ -300,7 +300,6 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptions():
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionsResource(request)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -319,7 +318,6 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfGetSubscriptionEntry(subscriptionId):
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -330,21 +328,21 @@ def rdStart_RedDrum_Flask_app(rdr):
     #    -returns 204-No Content
     @app.route("/redfish/v1/EventService", methods=['PATCH'])
     @rfcheckHeaders(rdr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureUsers"]])
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
     def rfPatchEventService():     
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
     # POST to Event Subscriptions -- return 405 and proper allow header for POST of a subscriptionId
     # POST /redfish/v1/EventService/Subscriptions
     @app.route("/redfish/v1/EventService/Subscriptions", methods=['POST'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
     def rfPostPutSubscriptionEntry405handler():     
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionResource(request, rdata)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -356,7 +354,6 @@ def rdStart_RedDrum_Flask_app(rdr):
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
     def rfDeleteSubscription(subscriptionId):
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteSubscriptionEntry(request, subscriptionId)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
@@ -365,22 +362,23 @@ def rdStart_RedDrum_Flask_app(rdr):
     #    -auth, write to a property in the Subscription
     @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['PATCH'])
     @rfcheckHeaders(rdr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
     def rfPatchSubscriptionEntry(subscriptionId):     
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchSubscriptionEntry(request, subscriptionId, rdata)
-        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 
     # POST test event
+    # TODO check privileges
     # POST /redfish/v1/EventService/Actions/EventService.SendTestEvent
     @app.route("/redfish/v1/EventService/Actions/EventService.SendTestEvent", methods=['POST'])
     @rfcheckHeaders(rdr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
     def rfEventTestEntry():     
         rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.sendTestEvent(request, rdata)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.sendTestEvent(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
 

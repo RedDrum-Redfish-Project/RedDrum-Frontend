@@ -16,8 +16,8 @@ from .generateId import rfGenerateId
 
 # TODO shouldn't this be moved to the "Event" class???
 class EventType(Enum):
-    statusChange = "StatusChange"
-    resourceUpdated = "ResourceUpdated"
+    #statusChange = "StatusChange"
+    #resourceUpdated = "ResourceUpdated"
     resourceAdded = "ResourceAdded"
     resourceRemoved= "ResourceRemoved"
     alert = "Alert"
@@ -47,6 +47,9 @@ class RfEventService():
         #load Events Entry Template
         self.subscriptionTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "EventDestination.json")
 
+        #load Event Template
+        self.eventTemplate=self.loadResourceTemplateFile(rdr.baseDataPath,"templates", "Event.json")
+
     # worker function called by loadResourceTemplates() to load a specific template
     # returns a dict loaded of the template file, which calling function saves to a variable
     # if file does not exist, the service exits
@@ -66,15 +69,13 @@ class RfEventService():
         filename="EventServiceDb.json"
         self.eventServiceDbFilePath,self.eventServiceDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-        # load the Events collection database file: "EventsDb.json"
+        # load the Events collection database file: "EventDestinationCollectionDb.json"
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDbFilePath,self.subscriptionsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
-#        # load the Events collection database file: "EventsDb.json"
-#        filename="EventDestinationDb.json"
-#        self.eventsDbFilePath,self.eventsDb=self.loadDatabaseFile(rdr,"db",filename) 
-
-#TODO volitile db needed?
+        # load the Events collection database file: "EventsDb.json"
+        #filename="EventsDb.json"
+        #self.eventsDbFilePath,self.eventsDb=self.loadDatabaseFile(rdr,"db",filename) 
 
     # worker function called by loadEventServiceDatabaseFiles() to load a specific database file
     # returns two positional parameters:
@@ -112,34 +113,14 @@ class RfEventService():
         filename="EventDestinationCollectionDb.json"
         self.subscriptionsDb=self.clearDatabaseFile(rdr,"db",filename) 
 
-        #filename="EventDestinationDb.json"
-        #self.rolesDb=self.clearDatabaseFile(rdr,"db",filename) 
-
-#TODO look at how chassis does the clear and follow
     def clearDatabaseFile( self, rdr, subDir, filename ):
         clearedDb=dict()
         dbFilePath=os.path.join(rdr.varDataPath,subDir, filename)
-        #write the data back out to the var directory where the dynamic db info is kept
-        #dbDictJson=json.dumps(clearedDb,indent=4)
-        #with open( dbFilePath, 'w', encoding='utf-8') as f:
-        #        f.write(dbDictJson)
+
         if os.path.exists(dbFilePath):
             os.remove(dbFilePath)
         # return path and data
         return(clearedDb)
-# Implementing 
-# Redfish.required is only for standard
-# Intel RSD may have additional required may have other types of requirement
-# Intel RSD is proprietary but eventually back into RFStandard
-# Concept of profiles describe additional requirements for a particular use-case
-# Example is OCP: HW Spec map to RF Property/Resources
-# RFImplementation - Profiles/Text in a spec
-
-# Annotations in payloads; 
-# Odata whitepaper spec
-# Property @ is an annotation
-# Redfish Service Validator
-
 
     # Stub response for unimplemented API's
     def stubResponse(self):
@@ -251,15 +232,12 @@ class RfEventService():
         subscriptionEntryUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId
         resData2["@odata.id"]=subscriptionEntryUri
         resData2["Id"]=subscriptionId
-        #TODO what is name #resData2["Name"]=self.subscriptionsDb[subscriptionId]["Name"]
+        #TODO what is Name #resData2["Name"]=self.subscriptionsDb[subscriptionId]["Name"]
         resData2["Protocol"]=self.subscriptionsDb[subscriptionId]["Protocol"]
         resData2["Context"]=self.subscriptionsDb[subscriptionId]["Context"]
-        resData2["EventDestination"]=self.subscriptionsDb[subscriptionId]["EventDestination"]
+        resData2["Destination"]=self.subscriptionsDb[subscriptionId]["Destination"]
+        #subscriptionType assumed to be "RedFishEvent"
         resData2["EventTypes"]=self.subscriptionsDb[subscriptionId]["EventTypes"]
-        if "subscriptionId" in self.subscriptionsDb[subscriptionId]:
-            resData2["subscriptionId"]=self.subscriptionsDb[subscriptionId]["subscriptionId"]
-        else:
-            resData2["subscriptionId"]=subscriptionId
 
         # convert to json
         jsonResponseData=(json.dumps(resData2,indent=4))
@@ -267,25 +245,9 @@ class RfEventService():
         return(0, 200, "", jsonResponseData, respHdrs)
 
 
-
-
-### Generate each subscription with ids example for POST ###
-#SessionService/postSessionResource
-#rfGenerateId generateId do not use S or A
-
-# Questions:
-# Is service / object patchable/puttable/etc
-# How indicated patchable/puttable properties
-
-### for PATCH/POST/ETC ###
-# check mockups on dmtf to see things like how numbers are generated for subscription ID
-# check xml schemas on dmtf github for sanity checking of required values (RequiredOnCreate)
-# Do we reject if uneeded data?  Probably not
-# check values are sane, regexp, integers versus strings, etc
-### for PATCH/POST/ETC ###
-
     # PATCH EventService
     def patchEventServiceResource(self,request, patchData):
+        # TODO privileges check?
         # TODO Do we allow GET and HEAD? 
         hdrs=self.hdrs.rfRespHeaders(request, contentType="json", allow=["HEAD","GET","PATCH"],
                                      resource=self.subscriptionsTemplate)
@@ -293,8 +255,14 @@ class RfEventService():
         errhdrs = self.hdrs.rfRespHeaders(request )
 
         # First check only patchable properties are present
-        patchables=("DeliveryRetryAttempts","DeliveryRetryIntervalSeconds")
+        # Empty for now...so we don't support EventService patch at the moment
+        # patchables=("DeliveryRetryAttempts","DeliveryRetryIntervalSeconds")
+        # Or return annotated object response saying these are read-only properties...for now reject
+        patchables=()
 
+        if patchData is not None:
+            return (4, 400, "Bad Request-Invalid Patch Property Received", "",errhdrs)
+            
         for prop in patchData:
             if not prop in patchables:
                 return (4, 400, "Bad Request-Invalid Patch Property Received", "",errhdrs)
@@ -307,7 +275,6 @@ class RfEventService():
         # now verify that the Post data is valid #
         ##########################################
 
-        #TODO is this an integer and bounds checking???
         for key in patchData:
             newVal=patchData[key]
             try:
@@ -320,6 +287,7 @@ class RfEventService():
         # then verify the properties passed-in are in valid ranges
         dlvyRtryAttempts=self.eventServiceDb['DeliveryRetryAttempts']
         dlvyRtryIntvlSecs=self.eventServiceDb['DeliveryRetryIntervalSeconds']
+
         if("DeliveryRetryAttempts" in patchData):
             dlvyRtryAttempts=patchData['DeliveryRetryAttempts']
         if("DeliveryRetryIntervalSeconds" in patchData):
@@ -339,21 +307,18 @@ class RfEventService():
         return(0, 204, "", "", hdrs)
 
 
-    # POST Subscription
     # POST to Subscription collection  (add subscription)
     def postSubscriptionResource(self,request, postData):
         # generate headers for 4xx error messages
         errhdrs = self.hdrs.rfRespHeaders(request )
 
-        postables=("Context","EventDestination","EventTypes", "Protocol")
+        postables=("Context","Destination","EventTypes", "Protocol")
 
         if not all (key in postData for key in postables):
             return (4, 400, "Bad Request-Invalid Post Property Sent", "", errhdrs)
 
-        # First check that client didnt' send us a property we cannot write
-
         # Check all required on create properties were sent as post data
-        if( (postData['Context'] is None) or (postData['EventDestination'] is None) or (postData['EventTypes'] is None) or (postData['Protocol'] is None ) ):
+        if( (postData['Context'] is None) or (postData['Destination'] is None) or (postData['EventTypes'] is None) or (postData['Protocol'] is None ) ):
             return (4, 400, "Bad Request-Required On Create properties not all sent", "",errhdrs)
 
         context=None
@@ -367,8 +332,8 @@ class RfEventService():
         if("Protocol" in postData):
             protocol=postData['Protocol']
 
-        if("EventDestination" in postData):
-            eventDestination=postData['EventDestination']
+        if("Destination" in postData):
+            eventDestination=postData['Destination']
 
         if("EventTypes" in postData):
             eventTypes=postData['EventTypes']
@@ -402,7 +367,7 @@ class RfEventService():
         # eventTypes must exist in the collection Event.EventType enum
         # TODO in reality, we only support 3 event types...
         if not isinstance(eventTypes, list):
-            return (4, 400, "Bad Request-Context must be a string", "",errhdrs)
+            return (4, 400, "Bad Request-Context must be a list", "",errhdrs)
         for event in eventTypes:
             if not EventType.has_value(event):
                 return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
@@ -415,15 +380,11 @@ class RfEventService():
         locationUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId
 
         # TODO add correct data ; add the new subscription entry to the eventDestinationCollectionDb
-        postables=("Context","EventDestination","EventTypes", "Protocol")
-        self.subscriptionsDb[subscriptionId]={"Context": context, "EventDestination": eventDestination, 
+        postables=("Context","Destination","EventTypes", "Protocol")
+        self.subscriptionsDb[subscriptionId]={"Context": context, "Destination": eventDestination, 
                    "Protocol": protocol, "EventTypes": eventTypes}
 
         #TODO 
-        # add the new event entry to the eventsDict
-        #dfltEventDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
-        #self.eventsDict[subscriptionId]=dfltEventDictEntry
-
         # write the EventDb back out to the file
         subscriptionsDbJson=json.dumps(self.subscriptionsDb, indent=4)
         with open( self.subscriptionsDbFilePath, 'w', encoding='utf-8') as f:
@@ -435,10 +396,6 @@ class RfEventService():
             #something went wrong--return 500
             return(5, 500, "Error Getting New Event Data","",{})
 
-     ## Not required
-        # calculate eTag
-        #etagValue=self.calculateEventEtag(subscriptionId)
-
         # get the response Header with Link, and Location
         respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri,
                                      resource=self.subscriptionTemplate)
@@ -446,7 +403,7 @@ class RfEventService():
         #return to flask uri handler
         return(0, 201, "Created",respData,respHeaderData)
 
-# PATCH Subscription
+    # PATCH Subscription
     def patchSubscriptionEntry(self, request, subscriptionId, patchData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
@@ -469,8 +426,6 @@ class RfEventService():
 
         self.subscriptionsDb[subscriptionId]["Context"]=context
 
-        #locationUri="/redfish/v1/EventService/Subscriptions/" + subscriptionId 
-
         # write the EventDb back out to the file
         subscriptionsDbJson=json.dumps(self.subscriptionsDb, indent=4)
         with open( self.subscriptionsDbFilePath, 'w', encoding='utf-8') as f:
@@ -479,12 +434,13 @@ class RfEventService():
         #return to flask uri handler
         return(0, 204, "No Content", "", hdrs)
 
- # Test Event Subscription
+    # Test Event Subscription
+    # TODO not complete
     def sendTestEvent(self, request, postData):
         # generate headers
         hdrs = self.hdrs.rfRespHeaders(request)
         #postables=("EventType","EventId", "EventTimestamp", "Severity", "Message", "MessageId", "MessageArgs", "OriginOfCondition")
-        postables=("EventType","EventId")
+        postables=("EventType","EventId","EventId","EventTimestamp","Severity","Message","MessageId","MessageArgs","OriginOfCondition")
 
         if not all (key in postData for key in postables):
             return (4, 400, "Bad Request-Invalid Object Post Property Sent", "", hdrs)
@@ -518,22 +474,37 @@ class RfEventService():
             if not isinstance(key, str):
                 return (4, 400, "Bad Request-Property must be a string", "",hdrs)
 
+        if not isinstance(eventTypes, list):
+            return (4, 400, "Bad Request-Context must be a list", "",hdrs)
+
+        for event in eventTypes:
+            if not EventType.has_value(event):
+                return (4, 400, "Bad Request-Supported EventType not sent", "",errhdrs)
+
+
+        resData2=dict(self.eventTemplate)
+
+        # add required properties
+        # TODO Name Property?
+        resData2["EventType"]  = eventType 
+        resData2["EventId"]  = eventId
+        resData2["EventTimeStamp"]  = eventTimestamp 
+        resData2["Severity"]  = severity
+        resData2["Message"]  = message
+        resData2["MessageId"]  = messageId
+        resData2["MessageArgs"]  = messageArgs
+        resData2["OriginOfCondition"]  = originOfCondition
+
+        # now overwrite the dynamic data from the subscriptionsDb 
         # create response header data
         # TODO
-        # add the new event entry to the eventsDict
-        #dfltEventDictEntry={ "Locked": False, "FailedLoginCount": 0, "LockedTime": 0, "AuthFailTime": 0 }
-        eventId=len(self.eventsDb) + 1
-        self.eventsDb[eventId]=postData
-        locationUri="/redfish/v1/EventService/Event/" + str(eventId)
+        #eventId=len(self.eventsDb) + 1
+        #self.eventsDb[eventId]=postData
+        #locationUri="/redfish/v1/EventService/Event/" + str(eventId)
 
-        #respHeaderData=self.hdrs.rfRespHeaders(request, contentType="json", location=locationUri, resource=self.subscriptionTemplate)
-        respHeaderData={"Location": locationUri}
-
+        respHeaderData={}
 
         #TODO fire off event using redfish library or http library
-
-        #return to flask uri handler
-        #return(0, 201, "Created",respData,respHeaderData)
         return(0, 201, "Created","",respHeaderData)
    
        
@@ -549,20 +520,6 @@ class RfEventService():
         if subscriptionid not in self.subscriptionsDb:
             return(4, 404, "Not Found","",hdrs)
 
-        # check if this is a deletable subscription
-#        if "Deletable" in self.subscriptionsDb[subscriptionid]:
-#            if self.subscriptionsDb[subscriptionid]["Deletable"] is True:
-#                del self.subscriptionsDb[subscriptionid]
-#            else:
-#                #TODO does this make sense?
-#                # get allow headers
-#                resp405Hdrs=self.hdrs.rfRespHeaders(request, contentType="raw", allow="GetPatch" )
-#                return(4, 405, "Method Not Allowed for this Subscription/URI","",resp405Hdrs)
-#
-#        # delete the subscriptionid entry from the subscriptionsDict also
-#        if subscriptionid in self.subscriptionsDict:
-#            del self.subscriptionsDict[subscriptionid]
-#
         # write the data back out to the eventService database file
         del self.subscriptionsDb[subscriptionid]
         eventDestinationCollectionDbJson=json.dumps(self.subscriptionsDb,indent=4)
