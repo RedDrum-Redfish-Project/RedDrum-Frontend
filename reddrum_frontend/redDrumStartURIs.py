@@ -274,6 +274,113 @@ def rdStart_RedDrum_Flask_app(rdr):
         return(resp,statusCode,hdrs)
 
 
+    # -----------------------------------------------------------------------
+    #  EventService URIs
+
+    # Get EventService
+    # GET /redfish/v1/EventService   --get Event service
+    #    -auth, json
+    @app.route("/redfish/v1/EventService", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetEventService():
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventServiceResource(request)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # ------------------------------------------------------------
+    # Event Service/ Subscriptions APIs
+
+    # Get Subscriptions
+    # GET /redfish/v1/EventService/Subscriptions -- get Subscription collection
+    # Privilege is "Login" or Ability to log into the service and read resources
+    #    -auth, json
+    @app.route("/redfish/v1/EventService/Subscriptions", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetSubscriptions():
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getEventSubscriptionsResource(request)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+#GETS for EventService will have privilege "Login"
+#dmtf github redfish tree registeries
+#PrivilegeRegisteries
+#Entity is EventService
+#oPATCH is Prvilige ConfigureManager
+#Review privilges in the spec
+#Look at SessionService for headers
+    # Get Subscription Entry
+    # GET /redfish/v1/EventService/Subscriptions/<subscriptionId>  -- get Subscription entry
+    #    -auth, json
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['GET','HEAD'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetSubscriptionEntry(subscriptionId):
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.getSubscriptionEntry(request, subscriptionId)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+
+    # Patch EventService
+    # PATCH /redfish/v1/EventService   --patch event service
+    #    -auth, update patch properties in EventService database file
+    #    -returns 204-No Content
+    @app.route("/redfish/v1/EventService", methods=['PATCH'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
+    def rfPatchEventService():     
+        rdata=request.get_json(cache=True)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchEventServiceResource(request, rdata)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # POST to Event Subscriptions -- return 405 and proper allow header for POST of a subscriptionId
+    # POST /redfish/v1/EventService/Subscriptions
+    @app.route("/redfish/v1/EventService/Subscriptions", methods=['POST'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
+    def rfPostPutSubscriptionEntry405handler():     
+        rdata=request.get_json(cache=True)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.postSubscriptionResource(request, rdata)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # Delete Subscription -- delete an subscription
+    # DELETE /redfish/v1/EventService/Subscriptions/<subscriptionId> 
+    #   -auth,  
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['DELETE'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
+    def rfDeleteSubscription(subscriptionId):
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.deleteSubscriptionEntry(request, subscriptionId)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # Patch Subscription  -- update a Subscription entry -- patch 
+    # PATCH /redfish/v1/EventService/Subscriptions/<subscriptionId>
+    #    -auth, write to a property in the Subscription
+    @app.route("/redfish/v1/EventService/Subscriptions/<subscriptionId>", methods=['PATCH'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
+    def rfPatchSubscriptionEntry(subscriptionId):     
+        rdata=request.get_json(cache=True)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.patchSubscriptionEntry(request, subscriptionId, rdata)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
+
+    # POST test event
+    # TODO check privileges
+    # POST /redfish/v1/EventService/Actions/EventService.SendTestEvent
+    @app.route("/redfish/v1/EventService/Actions/EventService.SendTestEvent", methods=['POST'])
+    @rfcheckHeaders(rdr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]])
+    def rfEventTestEntry():     
+        rdata=request.get_json(cache=True)
+        #rc,statusCode,errString,resp,hdrs=rdr.root.eventService.sendTestEvent(request, rdata)
+        rc,statusCode,errString,resp,hdrs=rdr.root.eventService.stubResponse()
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return(resp,statusCode,hdrs)
 
     # -----------------------------------------------------------------------
     #  AccountService URIs
@@ -316,6 +423,12 @@ def rdStart_RedDrum_Flask_app(rdr):
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getRolesCollectionResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
         return(resp,statusCode,hdrs)
+
+     #TODO look for subscriptionId
+     # Get Role
+     # GET /redfish/v1/AccountService/Role/<roleId>  -- get role entry
+     #    -auth, json
+
 
     # Get Role
     # GET /redfish/v1/AccountService/Role/<roleId>  -- get role entry

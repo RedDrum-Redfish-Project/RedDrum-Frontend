@@ -22,6 +22,9 @@
     "AccountService": {
         "@odata.id": "/redfish/v1/AccountService"
     },
+    "EventService": {
+        "@odata.id": "/redfish/v1/EventService"
+    },
     "Registries": {
         "@odata.id": "/redfish/v1/Registries"
     },
