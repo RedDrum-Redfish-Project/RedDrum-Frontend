@@ -336,7 +336,7 @@ class RfChassisResource():
         # build Intel Rackscale OEM Section 
         if "hasOemRackScaleLocation" in self.chassisDb[chassisid]:
             if self.chassisDb[chassisid]["hasOemRackScaleLocation"] is True:
-                locationId, parentId = self.rfr.backend.oemUtils.rsdLocation(chassisid)
+                locationId, parentId = self.rfr.backend.oemUtils.dellEsiUtils.rsdLocation(chassisid)
                 oemData = {"@odata.type": "#Intel.Oem.Chassis",
                            "Location": { "Id": locationId } }
                 if parentId is not None:
@@ -935,12 +935,12 @@ class RfChassisResource():
                         relatedItemMembers.append(relatedItemMember)
                     if "G5Blocks" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.backend.oemUtils.isBlock(chas) is True:
+                            if self.rfr.backend.oemUtils.dellEsiUtils.isBlock(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                     if "G5PowerBays" in self.voltageSensorsDb[chassisid]["Id"][sensorId]["AddRelatedItems"]:
                         for chas in self.chassisDb:
-                            if self.rfr.backend.oemUtils.isPowerBay(chas) is True:
+                            if self.rfr.backend.oemUtils.dellEsiUtils.isPowerBay(chas) is True:
                                 relatedItemMember = {"@odata.id": basePath + chas}
                                 relatedItemMembers.append(relatedItemMember)
                         
