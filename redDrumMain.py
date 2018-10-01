@@ -44,7 +44,7 @@ def main(argv):
     isLocal=True   # run the Front-end test always as local app
     debug=False
     rdTarget=""
-    rdVersion="0.9.5"
+    rdVersion="1.0.0"
     rdProfile=""
 
     try:
