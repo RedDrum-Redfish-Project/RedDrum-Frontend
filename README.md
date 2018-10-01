@@ -82,7 +82,7 @@ RedDrum are made, additional testing will be made.
 ```
     # clone the repo
     cd <directory-above-where-you-want-the-cloned-repo>
-    git clone -b v1.0.0 --single-branch https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  
+    git clone -b v1.0.0 --single-branch  https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  
        # this will get all of the code, data files, documentation, tools, and README.txts for version v1.0.0
 
     # put the "reddrum_frontend" package from RedDrum-Frontend clone directory into site packages in the python path
@@ -105,7 +105,7 @@ RedDrum are made, additional testing will be made.
 
 ```
     # install from github using pip install
-    pip install https://github.com/RedDrum-Redfish-Project/archive/v1.0.0.tar.gz 
+    pip install https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend/archive/v1.0.0.tar.gz 
 
 ```
 
