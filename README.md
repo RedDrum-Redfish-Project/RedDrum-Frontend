@@ -1,4 +1,4 @@
-# RedDrum Frontend  
+# RedDrum Frontend  V1.x.x
 The common Frontend App for RedDrum Redfish Servers
 
 ## About ***RedDrum-Frontend***
