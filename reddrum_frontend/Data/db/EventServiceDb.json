@@ -1,0 +1,22 @@
+{
+    "Id": "EventService",
+    "ServiceEnabled": true,
+    "DeliveryRetryAttempts": 3,
+    "DeliveryRetryIntervalSeconds": 30,
+    "Status" : {
+        "Health" : "OK",
+        "State" : "Enabled"
+    },
+    "Actions": { 
+	    "#EventService.SendTestEvent": { 
+             	"EventType@Redfish.AllowableValues": [ 
+			"StatusChange", 
+			"ResourceUpdated", 
+			"ResourceAdded", 
+			"ResourceRemoved", 
+			"Alert" 
+		], 
+		"target": "/redfish/v1/EventService/Actions/EventService.SendTestEvent"
+	    } 
+    } 
+}

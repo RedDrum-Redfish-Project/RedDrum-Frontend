@@ -10,6 +10,7 @@ import sys
 from  .resource         import  RfStaticResource 
 from  .sessionService   import RfSessionService
 from  .accountService   import RfAccountService
+from  .eventService     import RfEventService
 from  .jsonSchemas      import RfJsonSchemas
 from  .registries       import RfRegistries
 
@@ -162,9 +163,10 @@ class RfServiceRoot():
         self.odata=self.RfOdataServiceDocument(rfr,"base","static","OdataServiceDocument.json")
         self.metadata=self.RfMetadataDocument(rfr,"base","static","ServiceMetadata.xml",contentType="xml")
 
-        #create the sessionService and AccountService classes
+        #create the sessionService, AccountService and EventService classes
         self.sessionService=RfSessionService(rfr)
         self.accountService=RfAccountService(rfr)
+        self.eventService=RfEventService(rfr)
 
         #create the JsonSchemas and Registries classes
         self.jsonSchemas = RfJsonSchemas(rfr)
@@ -243,6 +245,9 @@ class RfServiceRoot():
 
             # then clear db caches for users, roles, and AccountsService
             self.accountService.clearAccountServiceDatabaseFiles(self,rdr)
+
+            # then clear db caches for users, roles, and AccountsService
+            self.eventService.clearEventServiceDatabaseFiles(self,rdr)
 
             return(0,204,"","")
         else:

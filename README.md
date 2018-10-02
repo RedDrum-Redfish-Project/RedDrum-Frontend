@@ -1,5 +1,14 @@
-# RedDrum Frontend  
+# RedDrum Frontend  V2.x.x
 The common Frontend App for RedDrum Redfish Servers
+
+## RedDrum-Frontend v1.x vs v2.x
+* the *master* branch is now "RedDrum-Frontend v2.x.x"
+  * all of the /redfish/v1/Chassis, /Systems, /Managers API processing has been moved to the backend to support the transparent proxy approach used by RedDrum-Aggregator
+  * RedDrum-OpenBMC and RedDrum-Simulator will be upgraded soon to use v2.x, but currently use v1.x
+
+* the *v1.0.0" branch is the old v1 Frontend that RedDrum-OpenBMC and RedDrum-Simulator currently use
+  * this has be **Released** as RedDrum-Frontend-v1.0.0 so you can pip install from there.
+  * soon, we will update OpenBMC and Simulator to use v2.x
 
 ## About ***RedDrum-Frontend***
 
@@ -9,18 +18,18 @@ ServiceRoot, AccountSerivce, SessionSerivce, and APIs for JsonSchemas, Registrie
 ***RedDrum-Frontend*** is used as the "Frontend" Redfish API service for other ***RedDrum*** Redfish Service Implementations:
 *  **RedDrum-Simulator** -- a 'high fidelity' Redfish simulator supporting authentication, HTTPS, and several (growing) system hardware configurations
 *  **RedDrum-OpenBMC** -- a python based Redfish service integrated with the OpenBMC
-*  **RedDrum-RackManager** -- (not yet released) a rack level Redfish service that provides a single Redfish Serivce to 
-consolidate management of a rack of servers
+*  **RedDrum-Aggregator** -- (uses RedDrum-Frontend v2.x.x) a Redfish service that aggregates several Redfish services (eg several BMCs) and provides a single consolidated Redfish Serivce such as to management of a rack of servers
 
 ***RedDrum-Frontend*** attempts to be implementation-independent, and relies on implementation-***specific*** code
 in the ***Backend*** of RedDrum Redfish implementations to implement Hardware resource discovery and access actual
 hardware sensors.  
 
-RedDrum-OpenBMC and RedDrum-Simulator, [and RedDrum-RackManager]  each have implementation-specific Backends.
+RedDrum-OpenBMC and RedDrum-Simulator, [and RedDrum-Aggregator]  each have implementation-specific Backends.
 
 During ***Resource Discovery***, the Backend ***Discovery*** code loads data into the Frontend python dictionary databases.
+(for v1.x.x of the Frontend, all data is cached in frontend databases--this changes for v2.x.x)
 
-After discovery, the Frontend code calls various resource ***update*** methods implemented in the Backends to update
+After discovery, the v1.x.x Frontend code calls various resource ***update*** methods implemented in the Backends to update
 Implementation-specific Systems, Chassis, and Managers resources.
 Actions (e.g system reset) are also implemented with implementation-specific Backend methods called by the Frontend.
 
@@ -35,6 +44,7 @@ The ***RedDrum Redfish Project*** includes several github repos for implementing
 * RedDrum-Httpd-Configs -- docs and setup scripts to integrate RedDrum with common httpd servers eg Apache and NGNX
 * RedDrum-Simulator -- a "high-fidelity" simulator built on RedDrum with several feature profiles and server configs
 * RedDrum-OpenBMC -- a RedDrum Redfish service integrated with the OpenBMC platform
+* RedDrum-Aggregator -- a RedDrum Redfish service that aggregates several 2nd level Redfish services such as for a Rack Level Service
 
 ## RedDrum Redfish Service Architecture Architecture httpd, frontend, backend
 RedDrum Redfish Service Architecture breaks the Redfish service into three parts:
@@ -47,7 +57,11 @@ RedDrum Redfish Service Architecture breaks the Redfish service into three parts
   * SEE RedDrum-Redfish-Project/RedDrum-Httpd-Config  Repo for description of how to configure the various httpd's
 
 * The RedDrum-Frontend -- implementation independent frontend code contained in RedDrum-Frontend
-  * All authentication is implemented by the Frontend
+  * All Authentication and Authorization is implemented by the Frontend
+  * ServiceRoot, SessionService, AccountService are fully implemented by Frontend
+  * valid URI paths are matched against supported methods and the appropriate frontend routines to execute
+  * request headers and verified, and response headers generated
+  * For Chassis, Systems, and Managers data, responses are generated based on the data in the frontend database for that resource.  The Backend updates the data in the database 
   * the frontend is single threaded but blazing fast since much of the data is cached in the frontend dictionaries
 
 * The RedDrum-Backend -- implements implementation-depended interfaces to the real hardware resources
@@ -77,8 +91,13 @@ RedDrum are made, additional testing will be made.
 ```
     # clone the repo
     cd <directory-above-where-you-want-the-cloned-repo>
-    git clone https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  
-       # this will get all of the code, data files, documentation, tools, and README.txts
+    # to get the v1.0.0 branch/release run the following github command
+    #   v1.0.0 is used with Current  RedDrum-OpenBMC and RedDrum-Simulator
+    git clone -b v1.0.0 --single-branch  https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  RedDrum-Frontend
+       # this will get all of the code, data files, documentation, tools, and README.txts for version v1.0.0
+
+    # to get the v2.x/master branch used by RedDrum-Aggregator, run the following command
+      git clone https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  RedDrum-Frontend
 
     # put the "reddrum_frontend" package from RedDrum-Frontend clone directory into site packages in the python path
     # case1: to install in non-editable mode (where you cant edit the Frontend code for development):
@@ -99,7 +118,12 @@ RedDrum are made, additional testing will be made.
   * Also see documentation of the Frontend APIs used by redDrumMain.py in  RedDrum-Frontend/reddrum_frontend/README.txt 
 
 ```
-    # install from github using pip install
+    # install Release-v1.0.0 from github using pip install
+    #   v1.0.0 is currently used by RedDrum-OpenBMC and RedDrum-Simulator
+    pip install https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend/archive/v1.0.0.tar.gz 
+
+    # install master branch v2.x.x from github using pip install -- this installs the latest 2.x
+    #   v2.x.x (use the latest) is currently used by RedDrum-Aggregator
     pip install git+https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend.git
 
 ```
@@ -116,7 +140,8 @@ RedDrum are made, additional testing will be made.
 
 ```
     # install from pypi using pip install
-     pip install RedDrum-Frontend` 
+     pip install RedDrum-Frontend==v1.0.0   # not supported yet
+     pip install RedDrum-Frontend==v2.0.0   # not supported yet
 ```
 
 
