@@ -12,6 +12,7 @@ from .authenticate import rfRegisterBasicAuthVerify
 from .authenticate import rfRegisterTokenAuthVerify
 from .redfish_headers import rfcheckHeaders
 from flask import g
+from flask import make_response
 
 # Base RedDrum Flask startup class
 #   rdr is a class with global data.
@@ -69,7 +70,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetVersions():
         rc,statusCode,errString,resp,hdrs=rdr.root.serviceVersions.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # Get Root
@@ -80,7 +81,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfServiceRoot():
         rc,statusCode,errString,resp,hdrs=rdr.root.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Root
     # GET /redfish/v1/   
@@ -90,7 +91,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfServiceRoot1():
         rc,statusCode,errString,resp,hdrs=rdr.root.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Odata
     # GET /redfish/v1/odata    
@@ -100,7 +101,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfOdataServiceDoc():
         rc,statusCode,errString,resp,hdrs=rdr.root.odata.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Metadata
     # GET /redfish/v1/$metadata    
@@ -110,7 +111,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfOdataMetadata():
         rc,statusCode,errString,resp,hdrs=rdr.root.metadata.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # ----------------------------------------------------------------
@@ -126,7 +127,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetRedDrumServiceInfo():
         rc,statusCode,errString,resp,hdrs=rdr.root.redDrumServiceInfo.getResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
     
 
     # -----------------------------------------------------------------------
@@ -141,7 +142,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfRegistriesCollection():
         rc,statusCode,errString,resp,hdrs=rdr.root.registries.getRegistriesCollection(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Registry
     # GET /redfish/v1/Registries/<registry>    
@@ -152,7 +153,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfRegistriesFile(registryId):
         rc,statusCode,errString,resp,hdrs=rdr.root.registries.getRegistriesFile(request,registryId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # Get JsonSchemas
@@ -164,7 +165,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfJsonSchemasCollection():
         rc,statusCode,errString,resp,hdrs=rdr.root.jsonSchemas.getJsonSchemaCollection(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get JsonSchema
     # GET /redfish/v1/JsonSchemas/<jsonSchemaId>    
@@ -175,7 +176,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfJsonSchemaFile(jsonSchemaId):
         rc,statusCode,errString,resp,hdrs=rdr.root.jsonSchemas.getJsonSchemaFile(request,jsonSchemaId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
 
@@ -213,7 +214,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetSessionService():
         rc,statusCode,errString,resp,hdrs=rdr.root.sessionService.getSessionServiceResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Patch SessionService
     # PATCH /redfish/v1/SessionService
@@ -225,7 +226,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rfr.root.sessionService.patchSessionServiceResource(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Sessions
     # GET /redfish/v1/SessionService/Sessions  --get sessions collection
@@ -236,7 +237,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetSessions():
         rc,statusCode,errString,resp,hdrs=rdr.root.sessionService.getSessionsCollectionResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
     
     # Get Session
     # GET /redfish/v1/SessionService/Sessions/<sessionid> --get session entry
@@ -247,7 +248,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetSessionsEntry(sessionid):
         rc,statusCode,errString,resp,hdrs=rfr.root.sessionService.getSessionEntry(request, sessionid)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Post Sessions,  SessionLogin API
     # POST to /redfish/v1/SessionService/Sessions
@@ -259,7 +260,8 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.sessionService.postSessionsResource(request,rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
+        #return(resp,statusCode,hdrs)
 
     # Delete Session,  SessionLogout API
     # DELETE /redfish/v1/SessionService/Sessions/<sessionid> 
@@ -271,7 +273,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfSessionLogout(sessionid):
         rc,statusCode,errString,resp,hdrs=rfr.root.sessionService.deleteSession(request, sessionid)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
 
@@ -287,7 +289,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetAccountService():
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getAccountServiceResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Patch AccountService
     # PATCH /redfish/v1/AccountService   --patch account service
@@ -300,7 +302,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.patchAccountServiceResource(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # ------------------------------------------------------------
@@ -315,7 +317,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetRoles():
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getRolesCollectionResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get Role
     # GET /redfish/v1/AccountService/Role/<roleId>  -- get role entry
@@ -326,7 +328,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetRoleId(roleId):
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.getRoleEntry(request, roleId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
         
     # Post RolesCollection,  add a custom Role
     # POST to /redfish/v1/AccountService/Roles
@@ -338,7 +340,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.postRolesResource(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Delete Role -- delete a custom role
     # DELETE /redfish/v1/AccountService/Roles/<roleid> 
@@ -349,7 +351,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfDeleteRole(roleid):
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.deleteRole(request, roleid)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Patch Role  -- update a custom role entry -- patch user account
     # PATCH /redfish/v1/AccountService/Roles/<roleId>
@@ -361,7 +363,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.patchRoleEntry(request, roleId, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # POST, PUT  RoleId  -- return 405 and proper allow header for POST an PUT of a roleId
     # POST /redfish/v1/AccountService/Roles/<roleId>
@@ -371,7 +373,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         #rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rdr.root.accountService.postPutRoleEntry(request, roleId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # ------------------------------------------------------------
     # Account Service/ Accounts APIs
@@ -385,7 +387,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetAccounts():
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.getAccountsCollectionResource(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
     
     # Get Account
     # GET /redfish/v1/AccountService/Accounts/<accountId>  -- get account entry
@@ -396,7 +398,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfGetAccountId(accountId):
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.getAccountEntry(request, accountId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # add a user
     # POST to /redfish/v1/AccountService/Accounts
@@ -408,7 +410,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.postAccountsResource(request, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Delete Account  -- delete a user
     # DELETE /redfish/v1/AccountService/Accounts/<accountId> 
@@ -419,7 +421,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rfDeleteAccount(accountId):
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.deleteAccount(request, accountId)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Patch Account -- update a user account-- patch user account
     # PATCH /redfish/v1/AccountService/Accounts/<accountId>
@@ -431,7 +433,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         rdata=request.get_json(cache=True)
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.patchAccountEntry(request, accountId, rdata)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # POST, PUT Account -- return 405 and proper allow header for POST an PUT of an account
     # POST /redfish/v1/AccountService/Accounts/<accountId>
@@ -441,7 +443,7 @@ def rdStart_RedDrum_Flask_app(rdr):
         #rdata=request.get_json(cache=True) # since a post or put may sent request data
         rc,statusCode,errString,resp,hdrs=rfr.root.accountService.postPutAccountEntry(request, accountId )
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # -----------------------------------------------------------------------
@@ -455,9 +457,9 @@ def rdStart_RedDrum_Flask_app(rdr):
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfSystems():
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemsCollectionResource(request)
+        rc,statusCode,errString,resp,hdrs=rfr.backend.systems.getSystemsCollection(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # GET Chassis
     # GET /redfish/v1/Chassis
@@ -466,9 +468,9 @@ def rdStart_RedDrum_Flask_app(rdr):
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfChassis():
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.getChassisCollectionResource(request)
+        rc,statusCode,errString,resp,hdrs=rfr.backend.chassis.getChassisCollection(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # GET Managers
     # GET /redfish/v1/Managers
@@ -477,321 +479,94 @@ def rdStart_RedDrum_Flask_app(rdr):
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
     def rfManagers():
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.getManagersCollectionResource(request)
+        rc,statusCode,errString,resp,hdrs=rfr.backend.managers.getManagersCollection(request)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # -----------------------------------------------------------------------
-    # Top-level Systems, Chassis, Managers   Member GETs
+    # Systems, Chassis, Managers   Resource GETs, PATCHs
 
     # GET System
     # GET /redfish/v1/Systems/<sysid>  -- get system entry
     #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/Systems/<path:urlSubPath>", methods=['GET','HEAD'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystems(sysid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemEntry(request, sysid)
+    def rfGetSystemsResource(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.systems.processSystemsResource(request, urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
+
+    @app.route("/redfish/v1/Systems/<path:urlSubPath>", methods=['PATCH'])
+    @rfcheckHeaders(rfr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
+    def rfPatchSystemsResource(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.chassis.processSystemsResource(request,urlSubPath)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # GET Chassis
     # GET /redfish/v1/Chassis/<chassisid>  -- get account entry
     #    -auth, json
-    @app.route("/redfish/v1/Chassis/<chassisid>", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/Chassis/<path:urlSubPath>", methods=['GET','HEAD'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetChassis(chassisid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.getChassisEntry(request, chassisid)
+    def rfGetChassisResource(urlSubPath):
+        print("at URLS: subpath: {}".format(urlSubPath))
+        rc,statusCode,errString,resp,hdrs=rfr.backend.chassis.processChassisResource(request,urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
+
+    @app.route("/redfish/v1/Chassis/<path:urlSubPath>", methods=['PATCH'])
+    @rfcheckHeaders(rfr)
+    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
+    def rfPatchChassisResource(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.chassis.processChassisResource(request,urlSubPath)
+        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # GET Manager
     # GET /redfish/v1/Managers/<mgrid>  -- get account entry
     #    -auth, json
-    @app.route("/redfish/v1/Managers/<mgrid>", methods=['GET','HEAD'])
+    @app.route("/redfish/v1/Managers/<path:urlSubPath>", methods=['GET','HEAD'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetManagers(mgrid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.getManagerEntry(request, mgrid)
+    def rfGetManagers(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.managers.processManagersResource(request, urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
-
-
-    # -----------------------------------------------------------------------
-    # Chassis  Power and Thermal resources
-
-    # GET Power
-    # GET /redfish/v1/Chassis/<chassisid>/Power  -- get account entry
-    #    -auth,  json
-    @app.route("/redfish/v1/Chassis/<chassisid>/Power", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetChassisPower(chassisid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.getChassisEntryPower(request, chassisid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET Thermal
-    # GET /redfish/v1/Chassis/<chassisid>/Thermal  -- get account entry
-    #    -auth,  json
-    @app.route("/redfish/v1/Chassis/<chassisid>/Thermal", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetChassisThermal(chassisid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.getChassisEntryThermal(request, chassisid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # -----------------------------------------------------------------------
-    # Chassis Reset, OemReseat, and Patch APIs
-
-    # POST Chassis Reset
-    # Chassis Reseat
-    # POST /redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reset -- Reset chassis
-    #    -auth,  post to chassis  at reseat target URI
-    @app.route("/redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reset", methods=['POST'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]]) 
-    def rfChassisReset(chassisid):
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.resetChassis(request, chassisid, rdata )
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # POST Chassis Oem Reseat
-    # Chassis Oem Reseat
-    # POST /redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reseat -- Reseat chassis
-    #    -auth,  post to chassis  at reseat target URI
-    @app.route("/redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reseat", methods=['POST'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]]) 
-    def rfChassisOemReseat(chassisid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.oemReseatChassis(request, chassisid )
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # PATCH  Chassis  -- write to IndicatorLED or AssetTag
-    # PATCH /redfish/v1/Chassis/<chassisid>
-    #    -auth, no data returned
-    @app.route("/redfish/v1/Chassis/<chassisid>", methods=['PATCH'])
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
-    def rfPatchChassisEntry(chassisid):     
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.patchChassisEntry(request, chassisid, rdata)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-
-    # Patch PowerControl
-    # PATCH /redfish/v1/Chassis/<chassisid>/Power  -- patch to power control resource
-    #    -auth, no content returned
-    @app.route("/redfish/v1/Chassis/<chassisid>/Power", methods=['PATCH'])
+    @app.route("/redfish/v1/Managers/<path:urlSubPath>", methods=['PATCH'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
-    def rfPatchChassisPower(chassisid):
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rfr.root.chassis.patchChassisPower(request, chassisid, rdata)
+    def rfPatchManagersResource(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.chassis.processManagersResource(request,urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
 
     # -----------------------------------------------------------------------
-    # System Reset and Patch APIs
-
-    # POST System Reset
-    # POST /redfish/v1/Systems/<sysid> -- reset system
-    #    -auth, requestData is {"ResetType": "<resetType>"}
-    #rest/v1/systems/1    
-    @app.route("/redfish/v1/Systems/<sysid>/Actions/ComputerSystem.Reset", methods=['POST'])
-    @rfcheckHeaders(rdr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]]) 
-    def rfComputerSystemreset(sysid):
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.systems.resetSystem(request, sysid, rdata)
+    # API for local schemastores -- these can be localized to point to various aggregated BMC schemaStores
+    @app.route("/redfish/v1/SchemaStores/<path:urlSubPath>", methods=['GET','HEAD'])
+    @rfcheckHeaders(rfr)
+    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
+    def rfGetSchemaStores(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.processSchemaStores(request, urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # PATCH System
-    # PATCH /redfish/v1/Systems/<systemid>
-    #    -auth, write to IndicatorLED or AssetTag
-    @app.route("/redfish/v1/Systems/<systemid>", methods=['PATCH'])
-    @rfcheckHeaders(rdr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]])
-    def rfPatchSystemEntry(systemid):     
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rdr.root.systems.patchSystemEntry(request, systemid, rdata)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # -----------------------------------------------------------------------
-    # Systems Level-2 APIs for Processors, SimpleStorage, Memory, EthernetControllers 
-
-    # GET System Processors
-    # GET /redfish/v1/Systems/<sysid>/Processors  -- get system Processors Collection
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/Processors", methods=['GET','HEAD'])
+    # API for local generic Location Header links
+    #   if a client replays a location header link starting w/ /redfish/v1/LocationUris/...,
+    #      it will be unlocalized and sent to the BMC that originated the link with the correct path.
+    @app.route("/redfish/v1/LocationUris/<path:urlSubPath>", methods=['GET','HEAD'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemProcessorCollection(sysid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemProcessorCollection(request, sysid)
+    def rfGetLocationUris(urlSubPath):
+        rc,statusCode,errString,resp,hdrs=rfr.backend.processLocationUris(request, urlSubPath)
         resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
-    # GET System Processor Entry
-    # GET /redfish/v1/Systems/<sysid>/Processors/<procid>  -- get system Processor Entry
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/Processors/<procid>", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemProcessorEntry(sysid,procid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemProcessorEntry(request, sysid, procid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System Memory
-    # GET /redfish/v1/Systems/<sysid>/Memory  -- get system Memory Collection
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/Memory", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemMemoryCollection(sysid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemMemoryCollection(request, sysid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System Memory Entry
-    # GET /redfish/v1/Systems/<sysid>/Memory/<memid>  -- get system Memory Entry
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/Memory/<memid>", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemMemoryEntry(sysid,memid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemMemoryEntry(request, sysid, memid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System SimpleStorage
-    # GET /redfish/v1/Systems/<sysid>/SimpleStorage  -- get system SimpleStorage Collection
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/SimpleStorage", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemSimpleStorageCollection(sysid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemSimpleStorageCollection(request, sysid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System SimpleStorage Entry
-    # GET /redfish/v1/Systems/<sysid>/SimpleStorage/<ctlrid>  -- get system SimpleStorage Entry
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/SimpleStorage/<ctlrid>", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemSimpleStorageEntry(sysid,ctlrid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemSimpleStorageEntry(request, sysid,ctlrid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System EthernetInterfaces
-    # GET /redfish/v1/Systems/<sysid>/EthernetInterfaces  -- get system EthernetInterfaces Collection
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/EthernetInterfaces", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemEthernetInterfaceCollection(sysid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemEthernetInterfaceCollection(request, sysid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET System EthernetInterface Entry
-    # GET /redfish/v1/Systems/<sysid>/EthernetInterfaces/<ethid>  -- get system EthernetInterface Entry
-    #    -auth, json
-    @app.route("/redfish/v1/Systems/<sysid>/EthernetInterfaces/<ethid>", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetSystemEthernetInterfaceEntry(sysid,ethid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.systems.getSystemEthernetInterfaceEntry(request, sysid, ethid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # -----------------------------------------------------------------------
-    # Manager Patch and Reset APIs
-
-    # Patch Manager 
-    # PATCH /redfish/v1/Managers/<mgrid> -- reset system
-    #    -auth,  patch to manager at target URI
-    @app.route("/redfish/v1/Managers/<mgrid>", methods=['PATCH'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]]) 
-    def rfPatchManager(mgrid):     
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.patchManagerEntry(request,mgrid,rdata)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # Manager Reset 
-    # POST /redfish/v1/Managers/<mgrid> -- reset manager
-    @app.route("/redfish/v1/Managers/<mgrid>/Actions/Manager.Reset", methods=['POST'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]]) 
-    def rfResetManager(mgrid):
-        rdata=request.get_json(cache=True)
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.resetManager(request,mgrid,rdata)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # -----------------------------------------------------------------------
-    # Manager NetworkProtocols and Ethernet Interfaces
-    # GET Manager NetworkProtocols
-    # GET /redfish/v1/Managers/<mgrid>/NetworkProtocol  
-    #    -auth, json
-    @app.route("/redfish/v1/Managers/<mgrid>/NetworkProtocol", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetManagerNetworkProtocol(mgrid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.getManagerNetworkProtocol(request, mgrid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # GET Manager EthernetInterfaces
-    # GET /redfish/v1/Managers/<mgrid>/EthernetInterfaces  
-    #    -auth, json
-    @app.route("/redfish/v1/Managers/<mgrid>/EthernetInterfaces", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetManagerEthernetInterfaces(mgrid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.getManagerEthernetInterfaces(request, mgrid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-
-    # GET Manager EthernetInterrfaces Entry
-    # GET /redfish/v1/Managers/<mgrid>/EthernetInterfaces/<ethid> 
-    #    -auth, json
-    @app.route("/redfish/v1/Managers/<mgrid>/EthernetInterfaces/<ethid>", methods=['GET','HEAD'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["Login"]])
-    def rfGetManagerEthernetInterfaceEntry(mgrid,ethid):
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.getManagerEthernetInterfaceEntry(request, mgrid, ethid)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
-
-    # -----------------------------------------------------------------------
-    # Manager OEM APIs
-    # POST Manager OEM Actions
-    # POST /redfish/v1/Managers/<mgrid>/Actions/Oem/<oemActionId>
-    #    -auth, json
-    @app.route("/redfish/v1/Managers/<mgrid>/Actions/Oem/<oemActionId>", methods=['POST'])
-    @rfcheckHeaders(rfr)
-    @auth.rfAuthRequired(rdr, privilege=[["ConfigureManager"]]) 
-    def rfOemManagerAction(mgrid,oemActionId):
-        rdata=request.get_json(cache=True)     
-        rc,statusCode,errString,resp,hdrs=rfr.root.managers.oemManagerAction(request, mgrid, oemActionId, rdata)
-        resp,statusCode,hdrs=rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs)
-        return(resp,statusCode,hdrs)
     # -----------------------------------------------------------------------
     # Internal RedDrum APIs used by backends
 
@@ -801,14 +576,15 @@ def rdStart_RedDrum_Flask_app(rdr):
     def rdPostBackendApi(apiId):
         rdata=request.get_json(cache=True)     
         rc,statusCode,errString,resp,hdrs=rfr.backend.postBackendApi(request, apiId, rdata)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
 
     # Get to Backend 
     # GET /RedDrum/Backend/<apiId>
     @app.route("/RedDrum/Backend/<apiId>", methods=['GET'])
     def rdGetBackendApi(apiId):
         rc,statusCode,errString,resp,hdrs=rfr.backend.getBackendApi(request, apiId)
-        return(resp,statusCode,hdrs)
+        return rfMakeResponse(resp,statusCode,hdrs)
+
 
     # -----------------------------------------------------------------------
     #END file redfishURIs
@@ -825,6 +601,10 @@ def rdStart_RedDrum_Flask_app(rdr):
 
 # ======================================================================
 # Per API Error Processing
+def rfMakeResponse(resp,statusCode,hdrs):
+    response  = make_response(resp,statusCode,hdrs)
+    response.autocorrect_location_header = False
+    return response
 
 def rfProcessErrors(rdr,request,rc,statusCode,errString,resp,hdrs):
     if rc==0:  
