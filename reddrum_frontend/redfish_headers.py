@@ -199,7 +199,9 @@ class RfAddHeaders():
                 else:
                     versionedNamespace = namespace + "." + version + ".json"
 
-                if (self.rdr.includeLocalJsonSchemas is True) and (self.rdr.useLocalJsonSchemasInLinkHeader is True):
+                #if (self.rdr.includeLocalJsonSchemas is True) and (self.rdr.useLocalJsonSchemasInLinkHeader is True):
+                x=True
+                if x is True:
                     # set Link header to point to local jsonSchema uri
                     linkHeader= "</redfish/v1/schemas/" + versionedNamespace + ">;rel=describedby"
                 else:

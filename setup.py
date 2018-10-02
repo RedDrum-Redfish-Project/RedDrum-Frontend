@@ -6,8 +6,8 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='RedDrum-Frontend',
-      version='v1.0.0',
-      description='python Redfish Service Frontend package used by RedDrum-Simulator, RedDrum-OpenBMC, and other RedDrum backends',
+      version='v2.0.0',
+      description='V2 python Redfish Service Frontend backage used by RedDrum-Aggregator',
       long_description=long_description,
       author='RedDrum-Redfish-Project / Paul Vancil, Dell ESI',
       author_email='redDrumRedfishProject@gmail.com',
@@ -22,7 +22,8 @@ setup(name='RedDrum-Frontend',
       ],
       keywords='Redfish RedDrum SPMF OpenBMC ',
       url='https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend',
-      download_url='https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend/archive/v1.0.0.tar.gz',
+
+      download_url='https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend/archive/v2.0.0.tar.gz',
       packages=['reddrum_frontend'],
       install_requires=[
           'passlib==1.7.1',   # used by Frontend

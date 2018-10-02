@@ -14,10 +14,6 @@ from  .eventService     import RfEventService
 from  .jsonSchemas      import RfJsonSchemas
 from  .registries       import RfRegistries
 
-from  .systems          import  RfSystemsResource
-from  .managers         import  RfManagersResource
-from  .chassis          import  RfChassisResource
-
 from  .redfish_headers  import RfAddHeaders
 
 
@@ -177,9 +173,10 @@ class RfServiceRoot():
         self.registries  = RfRegistries(rfr)
 
         #create the three data resource
-        self.chassis=RfChassisResource(rfr)
-        self.managers=RfManagersResource(rfr)
-        self.systems=RfSystemsResource(rfr)
+        # v2.x.x of RedDrum-Frontend no longer caches chassis, managers, and systems
+        #  self.chassis=RfChassisResource(rfr)
+        #  self.managers=RfManagersResource(rfr)
+        #  self.systems=RfSystemsResource(rfr)
 
 
     def finalInitProcessing(self,rdr):
@@ -278,9 +275,9 @@ class RfServiceRoot():
 
         elif clearOn=="Now" or clearOn=="Startup":
             rdr.logMsg("INFO", "Clearing Frontend Resource persistent caches. ClearOn: {}".format(clearOn))
-            self.chassis.clearChassisResourceCaches(rdr)
-            self.managers.clearManagersResourceCaches(rdr)
-            self.systems.clearSystemsResourceCaches(rdr)
+            #self.chassis.clearChassisResourceCaches(rdr)
+            #self.managers.clearManagersResourceCaches(rdr)
+            #self.systems.clearSystemsResourceCaches(rdr)
             return(0,204,"","")
         else:
             rdr.logMsg("WARNING", "clearHwResourceCaches got bad input. ClearOn: {}".format(clearOn)) 
