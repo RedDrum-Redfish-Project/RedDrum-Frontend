@@ -1,5 +1,14 @@
-# RedDrum Frontend  V1.x.x
+# RedDrum Frontend  V2.x.x
 The common Frontend App for RedDrum Redfish Servers
+
+## RedDrum-Frontend v1.x vs v2.x
+* the *master* branch is now "RedDrum-Frontend v2.x.x"
+  * all of the /redfish/v1/Chassis, /Systems, /Managers API processing has been moved to the backend to support the transparent proxy approach used by RedDrum-Aggregator
+  * RedDrum-OpenBMC and RedDrum-Simulator will be upgraded soon to use v2.x, but currently use v1.x
+
+* the *v1.0.0" branch is the old v1 Frontend that RedDrum-OpenBMC and RedDrum-Simulator currently use
+  * this has be **Released** as RedDrum-Frontend-v1.0.0 so you can pip install from there.
+  * soon, we will update OpenBMC and Simulator to use v2.x
 
 ## About ***RedDrum-Frontend***
 
@@ -82,8 +91,13 @@ RedDrum are made, additional testing will be made.
 ```
     # clone the repo
     cd <directory-above-where-you-want-the-cloned-repo>
-    git clone -b v1.0.0 --single-branch  https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  
+    # to get the v1.0.0 branch/release run the following github command
+    #   v1.0.0 is used with Current  RedDrum-OpenBMC and RedDrum-Simulator
+    git clone -b v1.0.0 --single-branch  https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  RedDrum-Frontend
        # this will get all of the code, data files, documentation, tools, and README.txts for version v1.0.0
+
+    # to get the v2.x/master branch used by RedDrum-Aggregator, run the following command
+      git clone https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend  RedDrum-Frontend
 
     # put the "reddrum_frontend" package from RedDrum-Frontend clone directory into site packages in the python path
     # case1: to install in non-editable mode (where you cant edit the Frontend code for development):
@@ -104,8 +118,13 @@ RedDrum are made, additional testing will be made.
   * Also see documentation of the Frontend APIs used by redDrumMain.py in  RedDrum-Frontend/reddrum_frontend/README.txt 
 
 ```
-    # install from github using pip install
+    # install Release-v1.0.0 from github using pip install
+    #   v1.0.0 is currently used by RedDrum-OpenBMC and RedDrum-Simulator
     pip install https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend/archive/v1.0.0.tar.gz 
+
+    # install master branch v2.x.x from github using pip install -- this installs the latest 2.x
+    #   v2.x.x (use the latest) is currently used by RedDrum-Aggregator
+    pip install git+https://github.com/RedDrum-Redfish-Project/RedDrum-Frontend.git
 
 ```
 
@@ -121,7 +140,8 @@ RedDrum are made, additional testing will be made.
 
 ```
     # install from pypi using pip install
-     pip install RedDrum-Frontend==v1.0.0
+     pip install RedDrum-Frontend==v1.0.0   # not supported yet
+     pip install RedDrum-Frontend==v2.0.0   # not supported yet
 ```
 
 
