@@ -32,21 +32,12 @@ class RfServiceRoot():
     def varDataPathDirs(self, rfr):
         # assign the paths
         dbPath=os.path.join(rfr.varDataPath, "db")
-        chasPath=os.path.join(rfr.varDataPath, "chassisDb")
-        sysPath=os.path.join(rfr.varDataPath, "systemsDb")
-        mgrPath=os.path.join(rfr.varDataPath, "managersDb")
 
         # check if the varDataPath directories exists and create them if not
         if not os.path.exists(rfr.varDataPath):
             os.makedirs(rfr.varDataPath)
         if not os.path.exists(dbPath):
             os.makedirs(dbPath)
-        if not os.path.exists(chasPath):
-            os.makedirs(chasPath)
-        if not os.path.exists(sysPath):
-            os.makedirs(sysPath)
-        if not os.path.exists(mgrPath):
-            os.makedirs(mgrPath)
         return(0)
 
     def loadServiceRootDict(self,rfr):
