@@ -328,6 +328,7 @@ class RfSystemsResource():
             if oemNetloc in self.systemsDb[systemid]:
                 oemData[oemNetloc]= self.systemsDb[systemid][oemNetloc]
 
+            oemData["@odata.type"] = "#DellG5MC.v1_0_0.ComputerSystem"
             if "Oem" not in responseData2:
                 responseData2["Oem"]={}
             responseData2["Oem"]["Dell_G5MC"] = oemData

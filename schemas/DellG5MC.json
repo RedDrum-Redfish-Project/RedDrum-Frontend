@@ -1,0 +1,7 @@
+{
+    "$schema": "http://redfish.dmtf.org/schemas/v1/redfish-schema-v1.json",
+    "copyright": "Copyright 2014-2018 Dell Inc. ",
+    "definitions": {},
+    "owningEntity": "Dell_G5MC",
+    "title": "#DellG5MC"
+}

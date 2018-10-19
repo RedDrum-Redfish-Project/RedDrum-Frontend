@@ -45,6 +45,11 @@
             "name": "Sessions",
             "kind": "Singleton",
             "url": "/redfish/v1/SessionService/Sessions"
+        },
+        {
+            "name": "EventService",
+            "kind": "Singleton",
+            "url": "/redfish/v1/EventService"
         }
     ]
 }
