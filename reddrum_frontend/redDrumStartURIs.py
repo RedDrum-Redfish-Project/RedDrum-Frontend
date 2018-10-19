@@ -678,7 +678,7 @@ def rdStart_RedDrum_Flask_app(rdr):
     # Chassis Oem Reseat
     # POST /redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reseat -- Reseat chassis
     #    -auth,  post to chassis  at reseat target URI
-    @app.route("/redfish/v1/Chassis/<chassisid>/Actions/Chassis.Reseat", methods=['POST'])
+    @app.route("/redfish/v1/Chassis/<chassisid>/Actions/Oem/DellG5MC.SledReseat", methods=['POST'])
     @rfcheckHeaders(rfr)
     @auth.rfAuthRequired(rdr, privilege=[["ConfigureComponents"]]) 
     def rfChassisOemReseat(chassisid):

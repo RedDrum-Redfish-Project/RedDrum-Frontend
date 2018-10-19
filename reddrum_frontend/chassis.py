@@ -311,12 +311,12 @@ class RfChassisResource():
 
         if "ActionsOemSledReseat" in self.chassisDb[chassisid]:
             if self.chassisDb[chassisid]["ActionsOemSledReseat"] is True:
-                resetAction = { "target": basePath + chassisid + "/Actions/Chassis.Reseat" }
+                resetAction = { "target": basePath + chassisid + "/Actions/Oem/DellG5MC.SledReseat" }
                 if "Actions" not in responseData2:
                     responseData2["Actions"]={}
                 if "Oem" not in responseData2["Actions"]:
                     responseData2["Actions"]["Oem"]={}
-                responseData2["Actions"]["Oem"]["#Dell.G5SledReseat"]= resetAction
+                responseData2["Actions"]["Oem"]["#DellG5MC.SledReseat"]= resetAction
 
         # build Dell OEM Section (Sleds only)
         if "Oem" in self.chassisDb[chassisid]:
@@ -329,6 +329,7 @@ class RfChassisResource():
                 if prop in self.chassisDb[chassisid]["Oem"]:
                     # since these sub-props are nonVolatile, read them from the database
                     oemData[prop] = self.chassisDb[chassisid]["Oem"][prop]
+            oemData["@odata.type"] = "#DellG5MC.v1_0_0.Chassis"
             if "Oem" not in responseData2:
                 responseData2["Oem"]={}
             responseData2["Oem"]["Dell_G5MC"] = oemData
@@ -618,13 +619,15 @@ class RfChassisResource():
         if chassisid in self.tempSensorsDb:
             # set the base static properties that were assigned when the resource was created
             temperatureArray=list()
+            index=0
             if "Id" not in self.tempSensorsDb[chassisid]:
                 self.tempSensorsDb[chassisid]={ "Id": {} }
             for sensorId in self.tempSensorsDb[chassisid]["Id"]:   # sensors "0", "1", ...
                 sensorData={}
+                sensorIndex=str(index)
 
                 # add the required Id and MemberId properties
-                sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Temperatures/" + sensorId
+                sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Temperatures/" + sensorIndex
                 sensorData["MemberId"]  = sensorId
 
                 # add the static properties
@@ -672,6 +675,9 @@ class RfChassisResource():
                 # add the Temperatures entry array to the Temperatures array
                 temperatureArray.append(sensorData)
 
+                # next member index
+                index = index + 1
+
             # Add the new member to the Temperatures array
             if "Temperatures" not in responseData2:
                 responseData2["Temperatures"]={}
@@ -693,15 +699,17 @@ class RfChassisResource():
         # add Fan Array properties
         if chassisid in self.fansDb:
             fanArray=list()
+            index = 0
             if "Id" not in self.fansDb[chassisid]:
                 self.fansDb[chassisid]={ "Id": {} }
            
             # set the base static properties that were assigned when the resource was created
             for fanId in self.fansDb[chassisid]["Id"]:   # fan "0", "1", ...
                 sensorData={}
+                sensorIndex=str(index)
 
                 # add the required Id and MemberId properties
-                sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Fans/" + fanId
+                sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Fans/" + sensorIndex
                 sensorData["MemberId"]  = fanId
 
                 # add the static properties
@@ -755,6 +763,7 @@ class RfChassisResource():
                     redundancySetMembers.append(redundancySetMember)
 
                 fanArray.append(sensorData)
+                index = index + 1
 
             # Add the new member to the Fan array
             if "Fans" not in responseData2:
@@ -773,12 +782,15 @@ class RfChassisResource():
                 fansRedundancyStatusSubProperties=["State", "Health"]
 
                 redundancyArray=list()
+                index = 0
+
                 # set the base static properties for this redundancy group
                 for redundancyGroup in self.fansDb[chassisid]["RedundancyGroup"]:
                     sensorData={}
+                    sensorIndex = str(index)
 
                     # add the required Id and MemberId properties
-                    sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Redundancy/" + redundancyGroup
+                    sensorData["@odata.id"] = basePath + chassisid + "/Thermal#/Redundancy/" + sensorIndex
                     sensorData["MemberId"]  = redundancyGroup
  
                     # add the standard redundancyProperty Properties that this service uses
@@ -798,7 +810,8 @@ class RfChassisResource():
                     for prop in statusProps:
                         sensorData[prop] = statusProps[prop]
 
-                redundancyArray.append(sensorData)
+                    redundancyArray.append(sensorData)
+                    index = index + 1
 
                 # Add the new member to the Redundancy array
                 if "Redundancy" not in responseData2:
@@ -894,13 +907,15 @@ class RfChassisResource():
         if chassisid in self.voltageSensorsDb:
             # set the base static properties that were assigned when the resource was created
             voltagesArray=list()
+            index = 0
             if "Id" not in self.voltageSensorsDb[chassisid]:
                 self.voltageSensorsDb[chassisid]={ "Id": {} }
             for sensorId in self.voltageSensorsDb[chassisid]["Id"]:   # sensors "0", "1", ...
                 sensorData={}
+                sensorIndex = str(index)
 
                 # add the required Id and MemberId properties
-                sensorData["@odata.id"] = basePath + chassisid + "/Power#/Voltages/" + sensorId
+                sensorData["@odata.id"] = basePath + chassisid + "/Power#/Voltages/" + sensorIndex
                 sensorData["MemberId"]  = sensorId
 
                 # add the static properties
@@ -950,6 +965,7 @@ class RfChassisResource():
 
                 # add the Voltages entry array to the voltage array
                 voltagesArray.append(sensorData)
+                index = index + 1
 
             # Add the new member to the Voltages array
             if "Voltages" not in responseData2:
@@ -976,13 +992,15 @@ class RfChassisResource():
         # add the powerControl members to the array
         if chassisid in self.powerControlDb:
             powerControlArray=list()
+            index = 0
             if "Id" not in self.powerControlDb[chassisid]:
                 self.powerControlDb[chassisid]={ "Id": {} }
             for powerControlId  in self.powerControlDb[chassisid]["Id"]:
                 sensorData={}
+                sensorIndex = str(index)
 
                 # add the required Id and MemberId properties
-                sensorData["@odata.id"] = basePath + chassisid + "/Power#/PowerControl/" + powerControlId
+                sensorData["@odata.id"] = basePath + chassisid + "/Power#/PowerControl/" + sensorIndex
                 sensorData["MemberId"]  = powerControlId
  
                 # add the standard static Properties that this service uses
@@ -1032,6 +1050,7 @@ class RfChassisResource():
                         sensorData["RelatedItem"] = relatedItemMembers
 
                 powerControlArray.append(sensorData)
+                index = index + 1
 
             # Add the new member to the Redundancy array
             if "PowerControl" not in responseData2:
@@ -1059,15 +1078,17 @@ class RfChassisResource():
         # add PowerSupply Array properties
         if chassisid in self.powerSuppliesDb:
             psusArray=list()
+            index = 0
             if "Id" not in self.powerSuppliesDb[chassisid]:
                 self.powerSuppliesDb[chassisid]={ "Id": {} }
 
             # set the base static properties that were assigned when the resource was created
             for psuId in self.powerSuppliesDb[chassisid]["Id"]:   # powerSupply "0", "1", ...
                 sensorData={}
+                sensorIndex = str(index)
 
                 # add the required Id and MemberId properties
-                sensorData["@odata.id"] = basePath + chassisid + "/Power#/PowerSupplies/" + psuId
+                sensorData["@odata.id"] = basePath + chassisid + "/Power#/PowerSupplies/" + sensorIndex
                 sensorData["MemberId"]  = psuId
 
                 # add the static properties
@@ -1116,6 +1137,7 @@ class RfChassisResource():
                     redundancySetMembers.append(redundancySetMember)
 
                 psusArray.append(sensorData)
+                index = index + 1
 
             # Add the new member to the PowerSupplies (psus) array
             if "PowerSupplies" not in responseData2:
@@ -1134,12 +1156,14 @@ class RfChassisResource():
                 psusRedundancyStatusSubProperties=["State", "Health"]
 
                 redundancyArray=list()
+                index = 0
                 # set the base static properties for this redundancy group
                 for redundancyGroup in self.powerSuppliesDb[chassisid]["RedundancyGroup"]:
                     sensorData={}
+                    sensorIndex = str(index)
 
                     # add the required Id and MemberId properties
-                    sensorData["@odata.id"] = basePath + chassisid + "/Power#/Redundancy/" + redundancyGroup
+                    sensorData["@odata.id"] = basePath + chassisid + "/Power#/Redundancy/" + sensorIndex
                     sensorData["MemberId"]  = redundancyGroup
  
                     # add the standard redundancyProperty Properties that this service uses
@@ -1159,7 +1183,8 @@ class RfChassisResource():
                     for prop in statusProps:
                         sensorData[prop] = statusProps[prop]
 
-                redundancyArray.append(sensorData)
+                    redundancyArray.append(sensorData)
+                    index = index + 1
 
                 # Add the new member to the Redundancy array
                 if "Redundancy" not in responseData2:

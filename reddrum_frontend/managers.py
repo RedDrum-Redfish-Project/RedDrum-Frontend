@@ -334,7 +334,7 @@ class RfManagersResource():
                 if prop in self.managersDb[managerid]["OemDellG5MCMgrInfo"]:
                     # since these sub-properties are nonVolatile, read them from the database
                     oemData[prop]=self.managersDb[managerid]["OemDellG5MCMgrInfo"][prop]
-
+            oemData["@odata.type"]="#DellG5MC.v1_0_0.Manager"
             if "Oem" not in responseData2:
                 responseData2["Oem"]={}
             responseData2["Oem"]["Dell_G5MC"] = oemData
